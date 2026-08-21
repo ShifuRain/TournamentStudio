@@ -42,6 +42,7 @@ func (s *Server) routes() {
 
 	authenticated := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry, auth.RoleSpectator)
 	organizerOnly := s.requireRole(auth.RoleOrganizer)
+	resultsWriter := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry)
 
 	s.mux.Handle("GET /api/whoami", authenticated(http.HandlerFunc(s.handleWhoAmI)))
 	s.mux.Handle("POST /api/logout", authenticated(http.HandlerFunc(s.handleLogout)))
@@ -52,6 +53,7 @@ func (s *Server) routes() {
 	s.mux.Handle("GET /api/tournaments/{id}/teams", authenticated(http.HandlerFunc(s.handleListTeams)))
 	s.mux.Handle("POST /api/tournaments/{id}/teams/import", organizerOnly(http.HandlerFunc(s.handleImportTeams)))
 	s.mux.Handle("POST /api/tournaments/{id}/rounds", organizerOnly(http.HandlerFunc(s.handleCreateRound)))
+	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/results", resultsWriter(http.HandlerFunc(s.handleSubmitResults)))
 	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
 }
 

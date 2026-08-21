@@ -105,3 +105,46 @@ func (r *Repo) SetStatus(roundID int64, status Status) error {
 	_, err := r.db.Exec(`UPDATE pre_phase_rounds SET status = ? WHERE id = ?`, string(status), roundID)
 	return err
 }
+
+func (r *Repo) SubmitResult(roundID int64, res Result) error {
+	_, err := r.db.Exec(
+		`INSERT INTO round_results (round_id, team_id, time_seconds, status) VALUES (?, ?, ?, ?)
+		 ON CONFLICT(round_id, team_id) DO UPDATE SET time_seconds = excluded.time_seconds, status = excluded.status`,
+		roundID, res.TeamID, res.TimeSeconds, nullIfEmpty(res.Status),
+	)
+	return err
+}
+
+func (r *Repo) ListResults(roundID int64) ([]Result, error) {
+	rows, err := r.db.Query(`SELECT team_id, time_seconds, status FROM round_results WHERE round_id = ?`, roundID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []Result
+	for rows.Next() {
+		var res Result
+		var timeSeconds sql.NullFloat64
+		var status sql.NullString
+		if err := rows.Scan(&res.TeamID, &timeSeconds, &status); err != nil {
+			return nil, err
+		}
+		if timeSeconds.Valid {
+			v := timeSeconds.Float64
+			res.TimeSeconds = &v
+		}
+		if status.Valid {
+			res.Status = status.String
+		}
+		results = append(results, res)
+	}
+	return results, rows.Err()
+}
+
+func nullIfEmpty(s string) any {
+	if s == "" {
+		return nil
+	}
+	return s
+}
