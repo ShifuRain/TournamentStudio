@@ -16,6 +16,9 @@ func NewRepo(s *store.Store) *Repo {
 }
 
 func (r *Repo) Create(t Team) (*Team, error) {
+	if t.ExtraFields == nil {
+		t.ExtraFields = map[string]string{}
+	}
 	extra, err := json.Marshal(t.ExtraFields)
 	if err != nil {
 		return nil, err
@@ -43,7 +46,7 @@ func (r *Repo) ListByTournament(tournamentID int64) ([]Team, error) {
 	}
 	defer rows.Close()
 
-	var result []Team
+	result := []Team{}
 	for rows.Next() {
 		var t Team
 		var extra string

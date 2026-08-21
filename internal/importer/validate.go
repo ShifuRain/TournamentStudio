@@ -7,8 +7,8 @@ import (
 )
 
 type RowProblem struct {
-	RowIndex int
-	Message  string
+	RowIndex int    `json:"row_index"`
+	Message  string `json:"message"`
 }
 
 type ValidationResult struct {

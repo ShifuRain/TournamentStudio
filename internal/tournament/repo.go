@@ -53,7 +53,7 @@ func (r *Repo) List() ([]Tournament, error) {
 	}
 	defer rows.Close()
 
-	var result []Tournament
+	result := []Tournament{}
 	for rows.Next() {
 		var t Tournament
 		if err := rows.Scan(&t.ID, &t.Name, &t.SportPluginID, &t.TournamentTypeID, &t.Language, &t.Status); err != nil {
