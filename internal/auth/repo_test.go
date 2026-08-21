@@ -59,3 +59,57 @@ func TestFindByUsernameNotFound(t *testing.T) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestFindByID(t *testing.T) {
+	repo := NewRepo(newTestStore(t))
+	created, err := repo.Create("organizer1", "correct-horse", RoleOrganizer)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	found, err := repo.FindByID(created.ID)
+	if err != nil {
+		t.Fatalf("FindByID: %v", err)
+	}
+	if found.Username != "organizer1" {
+		t.Fatalf("expected username organizer1, got %s", found.Username)
+	}
+}
+
+func TestFindByIDNotFound(t *testing.T) {
+	repo := NewRepo(newTestStore(t))
+	if _, err := repo.FindByID(999); err != ErrNotFound {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestCount(t *testing.T) {
+	repo := NewRepo(newTestStore(t))
+
+	count, err := repo.Count()
+	if err != nil {
+		t.Fatalf("Count: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("expected 0 users, got %d", count)
+	}
+
+	if _, err := repo.Create("organizer1", "pw", RoleOrganizer); err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	count, err = repo.Count()
+	if err != nil {
+		t.Fatalf("Count: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 user, got %d", count)
+	}
+}
+
+func TestCreateRejectsInvalidRole(t *testing.T) {
+	repo := NewRepo(newTestStore(t))
+	if _, err := repo.Create("bogus", "pw", Role("not-a-role")); err != ErrInvalidRole {
+		t.Fatalf("expected ErrInvalidRole, got %v", err)
+	}
+}

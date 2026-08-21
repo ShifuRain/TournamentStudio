@@ -38,6 +38,11 @@ func (r *SessionRepo) Create(userID int64, role Role) (*Session, error) {
 	return &Session{Token: token, UserID: userID, Role: role}, nil
 }
 
+func (r *SessionRepo) Delete(token string) error {
+	_, err := r.db.Exec(`DELETE FROM sessions WHERE token = ?`, token)
+	return err
+}
+
 func (r *SessionRepo) Find(token string) (*Session, error) {
 	row := r.db.QueryRow(`SELECT token, user_id, role FROM sessions WHERE token = ?`, token)
 	var s Session

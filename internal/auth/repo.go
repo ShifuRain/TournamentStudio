@@ -13,6 +13,7 @@ import (
 
 var ErrNotFound = errors.New("user not found")
 var ErrDuplicateUsername = errors.New("username already exists")
+var ErrInvalidRole = errors.New("invalid role")
 
 type Repo struct {
 	db *sql.DB
@@ -30,7 +31,20 @@ func isUniqueConstraintErr(err error) bool {
 	return false
 }
 
+func isValidRole(role Role) bool {
+	switch role {
+	case RoleOrganizer, RoleTimeEntry, RoleSpectator:
+		return true
+	default:
+		return false
+	}
+}
+
 func (r *Repo) Create(username, plainPassword string, role Role) (*User, error) {
+	if !isValidRole(role) {
+		return nil, ErrInvalidRole
+	}
+
 	hash, err := HashPassword(plainPassword)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
@@ -62,4 +76,26 @@ func (r *Repo) FindByUsername(username string) (*User, error) {
 	}
 	u.Role = Role(role)
 	return &u, nil
+}
+
+func (r *Repo) FindByID(id int64) (*User, error) {
+	row := r.db.QueryRow(`SELECT id, username, password_hash, role FROM users WHERE id = ?`, id)
+	var u User
+	var role string
+	if err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &role); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	u.Role = Role(role)
+	return &u, nil
+}
+
+func (r *Repo) Count() (int, error) {
+	var count int
+	if err := r.db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
