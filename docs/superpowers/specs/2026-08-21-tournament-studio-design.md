@@ -7,7 +7,7 @@ Status: Approved for planning
 
 TournamentStudio is a free/open-source, offline-first application that lets
 sports clubs organize and run tournaments. It is modular along two axes —
-**sport** and **tournament type** — via a WASM plugin system, and is
+**sport** and **tournament type** — via a Lua plugin system, and is
 multi-lingual (English + German built in, more via drop-in translation
 files).
 
@@ -27,7 +27,7 @@ work.
 - Works for a single organizer on one laptop, *or* scales to multiple
   devices on a club's local WiFi (timekeepers, organizer, spectator
   screens) — same binary, no separate deployment mode.
-- Sport- and tournament-type-specific logic is pluggable (WASM), not
+- Sport- and tournament-type-specific logic is pluggable (Lua), not
   hardcoded in core.
 - Attendees can always see an up-to-date schedule/standings view, live and
   printable.
@@ -38,7 +38,7 @@ work.
 - No knockout/elimination tournament-type (deferred).
 - No sports beyond Dragonboat (deferred).
 - No plugin marketplace/download UI — plugins are installed by dropping a
-  `.wasm` file into a folder.
+  `.lua` file into a folder.
 - No internet/cloud sync or hosted accounts.
 - No native mobile apps (the browser-based UI covers phones/tablets).
 
@@ -50,7 +50,7 @@ work.
     web-based SPA UI.
   - Embedded SQLite (pure-Go driver, no CGo) as the single-file datastore —
     trivial to back up (copy one file) and fully offline.
-  - Embedded WASM runtime (pure Go, e.g. `wazero`) hosting sport and
+  - Embedded Lua runtime (pure Go, `gopher-lua`) hosting sport and
     tournament-type plugins.
 - **Deployment is a non-decision at the code level**: running on one
   laptop and opening `localhost` in a browser, versus running on one
@@ -60,10 +60,13 @@ work.
   of three roles — **Organizer** (full control), **Time Entry** (can only
   submit/edit race results), **Spectator** (read-only). Enforced
   server-side on every write endpoint, not just hidden in the UI.
-- **Error isolation**: a plugin (sport or tournament-type) runs sandboxed
-  in its WASM instance; a plugin panic/trap is caught at the host boundary
-  and surfaced as an error to the organizer without crashing the server or
-  affecting other tournaments/plugins running in the same process.
+- **Error isolation**: a plugin (sport or tournament-type) runs in its own
+  Lua state (`*lua.LState`), with dangerous stdlib globals (file I/O,
+  process execution, `os`/`io` beyond what's explicitly allow-listed) never
+  registered into that state, and a per-call instruction/step budget so a
+  runaway or malicious script can't hang the server; a plugin error/panic
+  is caught at the host boundary and surfaced to the organizer without
+  crashing the server or affecting other tournaments/plugins.
 - **Concurrency**: result submissions are last-write-wins per
   team-per-heat, broadcast to all connected clients over WebSocket so the
   schedule/standings view and other Time Entry devices update immediately.
@@ -72,25 +75,36 @@ work.
 
 ## 4. Plugin System
 
-Two independent plugin axes, both implemented as WASM modules loaded from
-a `plugins/` folder at startup:
+Two independent plugin axes, both implemented as Lua scripts loaded from
+a `plugins/` folder at startup and run in an embedded, pure-Go Lua VM
+(`gopher-lua` — no CGo, matching the SQLite driver's build story):
 
-- **Sport plugins** (e.g. `dragonboat`) declare: an ID, display
+- **Sport plugins** (e.g. `dragonboat.lua`) declare: an ID, display
   terminology (translated via the i18n layer), sport-specific team/roster
   fields (e.g. boat class, crew size), and a list of compatible
   tournament-type plugin IDs.
-- **Tournament-type plugins** (e.g. `timed-heats-reseeding`) declare: an
-  ID, a list of compatible sport plugin IDs, and implement the
+- **Tournament-type plugins** (e.g. `timed-heats-reseeding.lua`) declare:
+  an ID, a list of compatible sport plugin IDs, and implement the
   competition-structure logic (grouping, reseeding, division cuts) against
   a generic host interface — the plugin never sees "dragonboat" directly,
-  only teams, recorded results, and round/division structure.
+  only teams, recorded results, and round/division structure passed in as
+  Lua tables, with results handed back the same way.
 - Compatibility is declared by ID on **both** sides and is browsable
   in-app via a "Plugins" screen listing installed plugins and what they
   declare support for — this is how an organizer discovers valid
   sport + tournament-type pairings when creating a tournament.
-- **Language plugins** are *not* WASM — they're JSON translation-key
-  bundles dropped into a `languages/` folder. No code execution, so a
-  non-programmer can contribute or edit a translation.
+- A plugin is a plain-text `.lua` file — readable and hand-editable by a
+  curious club volunteer without any compiler, unlike a compiled binary.
+  This is a deliberate tradeoff: Lua's sandboxing is achieved by
+  controlling what's exposed to the plugin's environment (see §3's Error
+  isolation) rather than a hardware-enforced memory boundary — acceptable
+  here since plugin authors are expected to be club volunteers, not
+  adversaries, and the isolation discipline (no file/process access) is
+  the same well-proven pattern used by nginx/OpenResty, Redis, and Neovim.
+- **Language plugins** are separate from sport/tournament-type plugins —
+  they're JSON translation-key bundles dropped into a `languages/` folder.
+  No code execution at all, not even Lua, so a non-programmer can
+  contribute or edit a translation with zero risk.
 
 ## 5. Data Model
 
@@ -171,7 +185,7 @@ no code.
 
 Documented in the README as copy-a-file operations, not build steps:
 - Add/edit a language: drop/edit a JSON file in `languages/`.
-- Install a community plugin: drop a `.wasm` file into `plugins/`; it
+- Install a community plugin: drop a `.lua` file into `plugins/`; it
   appears on the in-app "Plugins" screen.
 - Assign device roles: create a local account per role from the
   Organizer's admin screen.
@@ -181,10 +195,10 @@ Documented in the README as copy-a-file operations, not build steps:
 
 - **Tournament-type plugin logic** (reseeding, division cuts) is the
   highest-value surface for unit tests, since it's pure computation over
-  teams/results — testable independently of the server or WASM host via
-  a native (non-WASM) build target used only in tests, plus a smaller set
-  of tests running the actual compiled `.wasm` through the host interface
-  to catch host-boundary issues.
+  teams/results — testable by loading the actual `.lua` file into a
+  `*lua.LState` and driving it directly, no server or HTTP involved, plus
+  a smaller set of tests exercising it through the real host-call
+  interface to catch host-boundary/marshaling issues.
 - **Import/validation** gets table-driven tests over malformed/edge-case
   CSV and XLSX fixtures (missing fields, encoding issues, empty rows).
 - **Scheduling/delay math** (planned time + offset → effective time,
