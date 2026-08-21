@@ -71,3 +71,14 @@ func TestWhoAmIWithoutToken(t *testing.T) {
 		t.Fatalf("expected 401, got %d", rec.Code)
 	}
 }
+
+func TestWhoAmIWithInvalidToken(t *testing.T) {
+	s := newTestServer(t)
+	req := httptest.NewRequest(http.MethodGet, "/api/whoami", nil)
+	req.Header.Set("Authorization", "Bearer this-is-not-a-real-token")
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401, got %d", rec.Code)
+	}
+}
