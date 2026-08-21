@@ -6,19 +6,22 @@ import (
 
 	"tournamentstudio/internal/auth"
 	"tournamentstudio/internal/store"
+	"tournamentstudio/internal/tournament"
 )
 
 type Server struct {
-	mux      *http.ServeMux
-	users    *auth.Repo
-	sessions *auth.SessionRepo
+	mux         *http.ServeMux
+	users       *auth.Repo
+	sessions    *auth.SessionRepo
+	tournaments *tournament.Repo
 }
 
 func New(s *store.Store) *Server {
 	srv := &Server{
-		mux:      http.NewServeMux(),
-		users:    auth.NewRepo(s),
-		sessions: auth.NewSessionRepo(s),
+		mux:         http.NewServeMux(),
+		users:       auth.NewRepo(s),
+		sessions:    auth.NewSessionRepo(s),
+		tournaments: tournament.NewRepo(s),
 	}
 	srv.routes()
 	return srv
@@ -29,7 +32,12 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/login", s.handleLogin)
 
 	authenticated := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry, auth.RoleSpectator)
+	organizerOnly := s.requireRole(auth.RoleOrganizer)
+
 	s.mux.Handle("GET /api/whoami", authenticated(http.HandlerFunc(s.handleWhoAmI)))
+	s.mux.Handle("POST /api/tournaments", organizerOnly(http.HandlerFunc(s.handleCreateTournament)))
+	s.mux.Handle("GET /api/tournaments", authenticated(http.HandlerFunc(s.handleListTournaments)))
+	s.mux.Handle("GET /api/tournaments/{id}", authenticated(http.HandlerFunc(s.handleGetTournament)))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

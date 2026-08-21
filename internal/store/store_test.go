@@ -18,8 +18,8 @@ func TestOpenAppliesMigrationsOnce(t *testing.T) {
 	if err := s.DB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("query schema_migrations: %v", err)
 	}
-	if count != 3 {
-		t.Fatalf("expected 3 migrations applied, got %d", count)
+	if count != 4 {
+		t.Fatalf("expected 4 migrations applied, got %d", count)
 	}
 
 	// Reopening the same database must not reapply migrations.
@@ -32,7 +32,7 @@ func TestOpenAppliesMigrationsOnce(t *testing.T) {
 	if err := s2.DB.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&count); err != nil {
 		t.Fatalf("query schema_migrations: %v", err)
 	}
-	if count != 3 {
-		t.Fatalf("expected migrations not reapplied, still 3, got %d", count)
+	if count != 4 {
+		t.Fatalf("expected migrations not reapplied, still 4, got %d", count)
 	}
 }
