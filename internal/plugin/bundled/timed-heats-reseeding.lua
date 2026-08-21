@@ -41,8 +41,44 @@ local function next_round_groups(groups)
 end
 
 local function division_cuts(ranked_teams, cuts)
-  -- Replaced with the real implementation in the next task.
-  return {}
+  local divisions = {}
+  local idx = 1
+  local total = #ranked_teams
+  local used_names = {}
+
+  for _, cut in ipairs(cuts) do
+    if idx > total then
+      break
+    end
+    local size = cut.size
+    local remaining = total - idx + 1
+    if size > remaining then
+      size = remaining
+    end
+    local team_ids = {}
+    for _ = 1, size do
+      table.insert(team_ids, ranked_teams[idx])
+      idx = idx + 1
+    end
+    table.insert(divisions, {name = cut.name, team_ids = team_ids})
+    used_names[cut.name] = true
+  end
+
+  if idx <= total then
+    local name = "Final"
+    local suffix = 1
+    while used_names[name] do
+      suffix = suffix + 1
+      name = "Final " .. suffix
+    end
+    local team_ids = {}
+    for i = idx, total do
+      table.insert(team_ids, ranked_teams[i])
+    end
+    table.insert(divisions, {name = name, team_ids = team_ids})
+  end
+
+  return divisions
 end
 
 return {
