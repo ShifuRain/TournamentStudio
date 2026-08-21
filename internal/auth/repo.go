@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
+
+	sqlite "modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 
 	"tournamentstudio/internal/store"
 )
@@ -20,6 +22,14 @@ func NewRepo(s *store.Store) *Repo {
 	return &Repo{db: s.DB}
 }
 
+func isUniqueConstraintErr(err error) bool {
+	var sqliteErr *sqlite.Error
+	if errors.As(err, &sqliteErr) {
+		return sqliteErr.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE
+	}
+	return false
+}
+
 func (r *Repo) Create(username, plainPassword string, role Role) (*User, error) {
 	hash, err := HashPassword(plainPassword)
 	if err != nil {
@@ -28,7 +38,7 @@ func (r *Repo) Create(username, plainPassword string, role Role) (*User, error) 
 
 	res, err := r.db.Exec(`INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)`, username, hash, string(role))
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+		if isUniqueConstraintErr(err) {
 			return nil, ErrDuplicateUsername
 		}
 		return nil, err
