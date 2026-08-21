@@ -3,20 +3,33 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+
+	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/store"
 )
 
 type Server struct {
-	mux *http.ServeMux
+	mux      *http.ServeMux
+	users    *auth.Repo
+	sessions *auth.SessionRepo
 }
 
-func New() *Server {
-	s := &Server{mux: http.NewServeMux()}
-	s.routes()
-	return s
+func New(s *store.Store) *Server {
+	srv := &Server{
+		mux:      http.NewServeMux(),
+		users:    auth.NewRepo(s),
+		sessions: auth.NewSessionRepo(s),
+	}
+	srv.routes()
+	return srv
 }
 
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
+	s.mux.HandleFunc("POST /api/login", s.handleLogin)
+
+	authenticated := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry, auth.RoleSpectator)
+	s.mux.Handle("GET /api/whoami", authenticated(http.HandlerFunc(s.handleWhoAmI)))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

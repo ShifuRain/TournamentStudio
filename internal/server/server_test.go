@@ -3,11 +3,24 @@ package server
 import (
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
+
+	"tournamentstudio/internal/store"
 )
 
+func newTestServer(t *testing.T) *Server {
+	t.Helper()
+	s, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("open store: %v", err)
+	}
+	t.Cleanup(func() { s.DB.Close() })
+	return New(s)
+}
+
 func TestHealthz(t *testing.T) {
-	s := New()
+	s := newTestServer(t)
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	rec := httptest.NewRecorder()
 	s.ServeHTTP(rec, req)
