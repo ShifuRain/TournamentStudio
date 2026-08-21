@@ -61,16 +61,28 @@ func (t *TournamentTypePlugin) DivisionCuts(rankedTeamIDs []string, cuts []Cut) 
 		if !ok {
 			return nil, fmt.Errorf("division_cuts result entry %d is not a table", i)
 		}
-		name, _ := divTbl.RawGetString("name").(lua.LString)
-		var teamIDs []string
-		if teamIDsTbl, ok := divTbl.RawGetString("team_ids").(*lua.LTable); ok {
-			m := teamIDsTbl.Len()
-			for j := 1; j <= m; j++ {
-				if idStr, ok := teamIDsTbl.RawGetInt(j).(lua.LString); ok {
-					teamIDs = append(teamIDs, string(idStr))
-				}
-			}
+
+		nameVal := divTbl.RawGetString("name")
+		name, ok := nameVal.(lua.LString)
+		if !ok {
+			return nil, fmt.Errorf("division_cuts result entry %d has no name", i)
 		}
+
+		teamIDsTbl, ok := divTbl.RawGetString("team_ids").(*lua.LTable)
+		if !ok {
+			return nil, fmt.Errorf("division_cuts result entry %d has no team_ids table", i)
+		}
+
+		var teamIDs []string
+		m := teamIDsTbl.Len()
+		for j := 1; j <= m; j++ {
+			idStr, ok := teamIDsTbl.RawGetInt(j).(lua.LString)
+			if !ok {
+				return nil, fmt.Errorf("division_cuts result entry %d team_ids entry %d is not a string", i, j)
+			}
+			teamIDs = append(teamIDs, string(idStr))
+		}
+
 		divisions = append(divisions, Division{Name: string(name), TeamIDs: teamIDs})
 	}
 

@@ -62,3 +62,23 @@ func TestDivisionCutsTruncatesOverflow(t *testing.T) {
 		t.Fatalf("expected single division truncated to 3 teams, got %+v", got)
 	}
 }
+
+func TestDivisionCutsHandlesNameCollision(t *testing.T) {
+	ttp := loadTimedHeatsReseeding(t)
+
+	ranked := []string{"t1", "t2", "t3", "t4", "t5"}
+	cuts := []Cut{
+		{Name: "Final", Size: 3},
+	}
+
+	got, err := ttp.DivisionCuts(ranked, cuts)
+	if err != nil {
+		t.Fatalf("DivisionCuts: %v", err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("expected 2 divisions, got %d", len(got))
+	}
+	if got[1].Name != "Final 2" || len(got[1].TeamIDs) != 2 {
+		t.Fatalf("unexpected implicit division with collision handling: %+v", got[1])
+	}
+}
