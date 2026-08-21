@@ -3,6 +3,8 @@ package i18n
 import (
 	"embed"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -34,13 +36,12 @@ func Load(externalDir string) (*Catalog, error) {
 		c.strings[lang] = m
 	}
 
+	var extErr error
 	if externalDir != "" {
-		if err := c.loadExternal(externalDir); err != nil {
-			return nil, err
-		}
+		extErr = c.loadExternal(externalDir)
 	}
 
-	return c, nil
+	return c, extErr
 }
 
 func (c *Catalog) loadExternal(dir string) error {
@@ -52,6 +53,7 @@ func (c *Catalog) loadExternal(dir string) error {
 		return err
 	}
 
+	var errs []error
 	for _, e := range entries {
 		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
 			continue
@@ -59,11 +61,13 @@ func (c *Catalog) loadExternal(dir string) error {
 		lang := langFromFilename(e.Name())
 		data, err := os.ReadFile(filepath.Join(dir, e.Name()))
 		if err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("%s: %w", e.Name(), err))
+			continue
 		}
 		var m map[string]string
 		if err := json.Unmarshal(data, &m); err != nil {
-			return err
+			errs = append(errs, fmt.Errorf("%s: %w", e.Name(), err))
+			continue
 		}
 		if c.strings[lang] == nil {
 			c.strings[lang] = make(map[string]string)
@@ -71,6 +75,9 @@ func (c *Catalog) loadExternal(dir string) error {
 		for k, v := range m {
 			c.strings[lang][k] = v
 		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
 	}
 	return nil
 }
