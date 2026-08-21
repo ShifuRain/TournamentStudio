@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS _bootstrap (
+    id INTEGER PRIMARY KEY
+);
