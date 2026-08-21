@@ -4,6 +4,7 @@ go 1.25.0
 
 require (
 	github.com/xuri/excelize/v2 v2.11.0
+	github.com/yuin/gopher-lua v1.1.2
 	golang.org/x/crypto v0.55.0
 	modernc.org/sqlite v1.57.0
 )
