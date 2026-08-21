@@ -36,10 +36,19 @@ func (s *Server) requireRole(roles ...auth.Role) func(http.Handler) http.Handler
 				http.Error(w, "invalid session", http.StatusUnauthorized)
 				return
 			}
-			if !allowed[sess.Role] {
+
+			user, err := s.users.FindByID(sess.UserID)
+			if err != nil {
+				http.Error(w, "invalid session", http.StatusUnauthorized)
+				return
+			}
+			if !allowed[user.Role] {
 				http.Error(w, "forbidden", http.StatusForbidden)
 				return
 			}
+			// Reflect the current role (not the one snapshotted at login) to
+			// any handler that reads the session from the request context.
+			sess.Role = user.Role
 
 			ctx := context.WithValue(r.Context(), sessionContextKey, sess)
 			next.ServeHTTP(w, r.WithContext(ctx))

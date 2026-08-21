@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"tournamentstudio/internal/auth"
 )
@@ -48,4 +49,17 @@ func (s *Server) handleWhoAmI(w http.ResponseWriter, r *http.Request) {
 	sess := sessionFromContext(r)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"role": string(sess.Role)})
+}
+
+func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	authHeader := r.Header.Get("Authorization")
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	if err := s.sessions.Delete(token); err != nil {
+		http.Error(w, "could not log out", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{})
 }

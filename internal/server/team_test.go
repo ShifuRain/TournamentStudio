@@ -62,3 +62,59 @@ func TestCreateAndListTeamsManually(t *testing.T) {
 		t.Fatalf("expected 1 team, got %d", len(teams))
 	}
 }
+
+func TestCreateTeamNonexistentTournament(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+
+	body, _ := json.Marshal(map[string]any{"name": "Some Team"})
+	req := httptest.NewRequest(http.MethodPost, "/api/tournaments/999999/teams", bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateTeamWhitespaceOnlyNameRejected(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+	tournamentID := createTestTournament(t, s, token)
+
+	body, _ := json.Marshal(map[string]any{"name": "   ", "club": "  Some Club  "})
+	path := fmt.Sprintf("/api/tournaments/%d/teams", tournamentID)
+	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for whitespace-only name, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestCreateTeamTrimsClub(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+	tournamentID := createTestTournament(t, s, token)
+
+	body, _ := json.Marshal(map[string]any{"name": "Rhein Dragons", "club": "  Some Club  "})
+	path := fmt.Sprintf("/api/tournaments/%d/teams", tournamentID)
+	req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var created struct {
+		Club string `json:"club"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created team: %v", err)
+	}
+	if created.Club != "Some Club" {
+		t.Fatalf("expected trimmed club %q, got %q", "Some Club", created.Club)
+	}
+}

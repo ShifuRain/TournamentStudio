@@ -7,12 +7,22 @@ import (
 	"strings"
 
 	"tournamentstudio/internal/importer"
+	"tournamentstudio/internal/tournament"
 )
 
 func (s *Server) handleImportTeams(w http.ResponseWriter, r *http.Request) {
 	tournamentID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
 		http.Error(w, "invalid tournament id", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := s.tournaments.Get(tournamentID); err != nil {
+		if err == tournament.ErrNotFound {
+			http.Error(w, "tournament not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "could not look up tournament", http.StatusInternalServerError)
 		return
 	}
 

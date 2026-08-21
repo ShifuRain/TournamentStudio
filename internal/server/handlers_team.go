@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"tournamentstudio/internal/team"
+	"tournamentstudio/internal/tournament"
 )
 
 type createTeamRequest struct {
@@ -21,20 +23,31 @@ func (s *Server) handleCreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, err := s.tournaments.Get(tournamentID); err != nil {
+		if err == tournament.ErrNotFound {
+			http.Error(w, "tournament not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "could not look up tournament", http.StatusInternalServerError)
+		return
+	}
+
 	var req createTeamRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	if req.Name == "" {
+	name := strings.TrimSpace(req.Name)
+	club := strings.TrimSpace(req.Club)
+	if name == "" {
 		http.Error(w, "name is required", http.StatusBadRequest)
 		return
 	}
 
 	created, err := s.teams.Create(team.Team{
 		TournamentID: tournamentID,
-		Name:         req.Name,
-		Club:         req.Club,
+		Name:         name,
+		Club:         club,
 		ExtraFields:  req.ExtraFields,
 	})
 	if err != nil {

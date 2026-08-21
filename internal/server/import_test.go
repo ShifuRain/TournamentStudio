@@ -61,6 +61,29 @@ func TestImportCSVTeamsEndToEnd(t *testing.T) {
 	}
 }
 
+func TestImportTeamsNonexistentTournament(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+
+	var body bytes.Buffer
+	mw := multipart.NewWriter(&body)
+	part, err := mw.CreateFormFile("file", "teams.csv")
+	if err != nil {
+		t.Fatalf("CreateFormFile: %v", err)
+	}
+	part.Write([]byte("name,club\nMöwe RC Kiel,Möwe Ruderclub e.V.\n"))
+	mw.Close()
+
+	importReq := httptest.NewRequest(http.MethodPost, "/api/tournaments/999999/teams/import", &body)
+	importReq.Header.Set("Authorization", "Bearer "+token)
+	importReq.Header.Set("Content-Type", mw.FormDataContentType())
+	importRec := httptest.NewRecorder()
+	s.ServeHTTP(importRec, importReq)
+	if importRec.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d: %s", importRec.Code, importRec.Body.String())
+	}
+}
+
 // TestImportTeamsPartialPersistenceFailure proves that when one row's
 // s.teams.Create call fails after validation has already passed, the
 // handler does not abort with a bare 500: it records the failure as an

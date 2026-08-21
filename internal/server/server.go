@@ -38,6 +38,7 @@ func (s *Server) routes() {
 	organizerOnly := s.requireRole(auth.RoleOrganizer)
 
 	s.mux.Handle("GET /api/whoami", authenticated(http.HandlerFunc(s.handleWhoAmI)))
+	s.mux.Handle("POST /api/logout", authenticated(http.HandlerFunc(s.handleLogout)))
 	s.mux.Handle("POST /api/tournaments", organizerOnly(http.HandlerFunc(s.handleCreateTournament)))
 	s.mux.Handle("GET /api/tournaments", authenticated(http.HandlerFunc(s.handleListTournaments)))
 	s.mux.Handle("GET /api/tournaments/{id}", authenticated(http.HandlerFunc(s.handleGetTournament)))
