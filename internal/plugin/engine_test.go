@@ -141,6 +141,31 @@ func TestLoadNonexistentExternalDirDoesNotError(t *testing.T) {
 	defer e.Close()
 }
 
+func TestExternalPluginOverridesBundledOnSameID(t *testing.T) {
+	dir := t.TempDir()
+	writeTestPlugin(t, dir, "dragonboat.lua", `
+return {
+  id = "dragonboat",
+  display_name = "Overridden Dragonboat",
+  compatible_tournament_types = {"timed-heats-reseeding"},
+}
+`)
+
+	e, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	defer e.Close()
+
+	sp := findSport(e, "dragonboat")
+	if sp == nil {
+		t.Fatalf("expected dragonboat to still be registered")
+	}
+	if sp.DisplayName != "Overridden Dragonboat" {
+		t.Fatalf("expected external plugin to override bundled one, got display name %q", sp.DisplayName)
+	}
+}
+
 // TestSandboxDeniesDangerousGlobals verifies the per-plugin VM never exposes
 // os, io, require, load, dofile, loadstring, loadfile, or module — the
 // filesystem/process/module-loading escape hatches gopher-lua's base

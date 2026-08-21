@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,19 +10,38 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
+//go:embed bundled/*.lua
+var bundledPlugins embed.FS
+
 type Engine struct {
 	sports          map[string]*SportPlugin
 	tournamentTypes map[string]*TournamentTypePlugin
 }
 
-// Load scans externalDir for *.lua files and registers each as either a
-// sport plugin or a tournament-type plugin. A missing externalDir is not
-// an error (empty engine). A malformed or invalid individual file is
-// logged and skipped, never fatal to the rest of the load.
+// Load registers the two plugins built into the binary (bundled/*.lua,
+// embedded at compile time), then scans externalDir for additional or
+// overriding *.lua files. A missing externalDir is not an error. A
+// malformed or invalid external file is logged and skipped; a malformed
+// bundled file is a hard error (it shipped broken, which is our bug, not
+// a plugin author's).
 func Load(externalDir string) (*Engine, error) {
 	e := &Engine{
 		sports:          make(map[string]*SportPlugin),
 		tournamentTypes: make(map[string]*TournamentTypePlugin),
+	}
+
+	bundledEntries, err := bundledPlugins.ReadDir("bundled")
+	if err != nil {
+		return nil, fmt.Errorf("read bundled plugins: %w", err)
+	}
+	for _, entry := range bundledEntries {
+		source, err := bundledPlugins.ReadFile("bundled/" + entry.Name())
+		if err != nil {
+			return nil, fmt.Errorf("read bundled plugin %s: %w", entry.Name(), err)
+		}
+		if err := e.loadSource(entry.Name(), source); err != nil {
+			return nil, fmt.Errorf("bundled plugin %s: %w", entry.Name(), err)
+		}
 	}
 
 	entries, err := os.ReadDir(externalDir)

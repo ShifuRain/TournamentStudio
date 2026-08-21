@@ -3,7 +3,7 @@ package plugin
 import "testing"
 
 func TestBundledDragonboatPluginRegisters(t *testing.T) {
-	e, err := Load("bundled")
+	e, err := Load(t.TempDir())
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}

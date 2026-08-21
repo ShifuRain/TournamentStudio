@@ -11,9 +11,7 @@ func f(v float64) *float64 { return &v }
 
 func loadTimedHeatsReseeding(t *testing.T) *TournamentTypePlugin {
 	t.Helper()
-	// bundled/ is not embedded until Task 6 — until then, point Load at
-	// the real bundled directory directly, same as any external dir.
-	e, err := Load("bundled")
+	e, err := Load(t.TempDir())
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
