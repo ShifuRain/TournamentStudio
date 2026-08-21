@@ -43,16 +43,22 @@ func (s *Server) handleImportTeams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	result := importer.Validate(tournamentID, rows)
-	for _, t := range result.Teams {
+	imported := 0
+	problems := result.Problems
+	for i, t := range result.Teams {
 		if _, err := s.teams.Create(t); err != nil {
-			http.Error(w, "could not save team: "+err.Error(), http.StatusInternalServerError)
-			return
+			problems = append(problems, importer.RowProblem{
+				RowIndex: i,
+				Message:  "could not save team " + t.Name + ": " + err.Error(),
+			})
+			continue
 		}
+		imported++
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]any{
-		"imported": len(result.Teams),
-		"problems": result.Problems,
+		"imported": imported,
+		"problems": problems,
 	})
 }
