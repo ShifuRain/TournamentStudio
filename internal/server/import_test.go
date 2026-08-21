@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/store"
 )
 
@@ -105,7 +106,13 @@ func TestImportTeamsPartialPersistenceFailure(t *testing.T) {
 		t.Fatalf("create unique index: %v", err)
 	}
 
-	s := New(st)
+	engine, err := plugin.Load(t.TempDir())
+	if err != nil {
+		t.Fatalf("load plugins: %v", err)
+	}
+	t.Cleanup(engine.Close)
+
+	s := New(st, engine)
 	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
 	tournamentID := createTestTournament(t, s, token)
 

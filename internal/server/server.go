@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/store"
 	"tournamentstudio/internal/team"
 	"tournamentstudio/internal/tournament"
@@ -16,15 +17,17 @@ type Server struct {
 	sessions    *auth.SessionRepo
 	tournaments *tournament.Repo
 	teams       *team.Repo
+	plugins     *plugin.Engine
 }
 
-func New(s *store.Store) *Server {
+func New(s *store.Store, plugins *plugin.Engine) *Server {
 	srv := &Server{
 		mux:         http.NewServeMux(),
 		users:       auth.NewRepo(s),
 		sessions:    auth.NewSessionRepo(s),
 		tournaments: tournament.NewRepo(s),
 		teams:       team.NewRepo(s),
+		plugins:     plugins,
 	}
 	srv.routes()
 	return srv
@@ -45,6 +48,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/teams", organizerOnly(http.HandlerFunc(s.handleCreateTeam)))
 	s.mux.Handle("GET /api/tournaments/{id}/teams", authenticated(http.HandlerFunc(s.handleListTeams)))
 	s.mux.Handle("POST /api/tournaments/{id}/teams/import", organizerOnly(http.HandlerFunc(s.handleImportTeams)))
+	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

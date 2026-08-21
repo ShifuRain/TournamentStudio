@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/server"
 	"tournamentstudio/internal/store"
 )
@@ -28,7 +29,17 @@ func main() {
 		log.Fatalf("bootstrap admin: %v", err)
 	}
 
-	s := server.New(st)
+	pluginsDir := os.Getenv("TOURNAMENTSTUDIO_PLUGINS")
+	if pluginsDir == "" {
+		pluginsDir = "plugins"
+	}
+	engine, err := plugin.Load(pluginsDir)
+	if err != nil {
+		log.Fatalf("load plugins: %v", err)
+	}
+	defer engine.Close()
+
+	s := server.New(st, engine)
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, s); err != nil {
