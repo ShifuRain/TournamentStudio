@@ -671,21 +671,15 @@ import (
 
 func loadTimedHeatsReseeding(t *testing.T) *TournamentTypePlugin {
 	t.Helper()
-	e, err := Load(t.TempDir())
+	// bundled/ is not embedded until Task 6 — until then, point Load at
+	// the real bundled directory directly, same as any external dir.
+	e, err := Load("bundled")
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
 	t.Cleanup(e.Close)
 
-	// bundled/ is not embedded until Task 6 — until then, point Load at
-	// the real bundled directory directly, same as any external dir.
-	e2, err := Load("bundled")
-	if err != nil {
-		t.Fatalf("Load bundled: %v", err)
-	}
-	t.Cleanup(e2.Close)
-
-	ttp := findTournamentType(e2, "timed-heats-reseeding")
+	ttp := findTournamentType(e, "timed-heats-reseeding")
 	if ttp == nil {
 		t.Fatalf("timed-heats-reseeding plugin not found")
 	}
@@ -2166,7 +2160,7 @@ git commit -m "feat: add PrePhaseRound/Group domain and create-round endpoint"
 - Create: `internal/store/migrations/0008_round_results.sql`
 - Modify: `internal/round/model.go` (add `Result`)
 - Modify: `internal/round/repo.go` (add `SubmitResult`, `ListResults`)
-- Create: `internal/round/repo_test.go` additions (same file, new test functions)
+- Modify: `internal/round/repo_test.go` (add new test functions to the existing file)
 - Create: `internal/server/handlers_round_results.go`
 - Create: `internal/server/round_results_test.go`
 - Modify: `internal/server/server.go` (register the results route with a new `resultsWriter` role wrapper)
