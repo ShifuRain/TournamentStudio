@@ -6,6 +6,7 @@ import (
 
 	"tournamentstudio/internal/auth"
 	"tournamentstudio/internal/plugin"
+	"tournamentstudio/internal/round"
 	"tournamentstudio/internal/store"
 	"tournamentstudio/internal/team"
 	"tournamentstudio/internal/tournament"
@@ -18,6 +19,7 @@ type Server struct {
 	tournaments *tournament.Repo
 	teams       *team.Repo
 	plugins     *plugin.Engine
+	rounds      *round.Repo
 }
 
 func New(s *store.Store, plugins *plugin.Engine) *Server {
@@ -28,6 +30,7 @@ func New(s *store.Store, plugins *plugin.Engine) *Server {
 		tournaments: tournament.NewRepo(s),
 		teams:       team.NewRepo(s),
 		plugins:     plugins,
+		rounds:      round.NewRepo(s),
 	}
 	srv.routes()
 	return srv
@@ -48,6 +51,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/teams", organizerOnly(http.HandlerFunc(s.handleCreateTeam)))
 	s.mux.Handle("GET /api/tournaments/{id}/teams", authenticated(http.HandlerFunc(s.handleListTeams)))
 	s.mux.Handle("POST /api/tournaments/{id}/teams/import", organizerOnly(http.HandlerFunc(s.handleImportTeams)))
+	s.mux.Handle("POST /api/tournaments/{id}/rounds", organizerOnly(http.HandlerFunc(s.handleCreateRound)))
 	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
 }
 
