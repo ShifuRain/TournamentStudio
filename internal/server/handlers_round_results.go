@@ -65,9 +65,11 @@ func (s *Server) handleSubmitResults(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not list groups", http.StatusInternalServerError)
 		return
 	}
-	expected := 0
+	validTeamIDs := make(map[string]bool)
 	for _, g := range groups {
-		expected += len(g.TeamIDs)
+		for _, teamID := range g.TeamIDs {
+			validTeamIDs[teamID] = true
+		}
 	}
 
 	results, err := s.rounds.ListResults(roundID)
@@ -76,7 +78,20 @@ func (s *Server) handleSubmitResults(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if expected > 0 && len(results) >= expected {
+	haveResult := make(map[string]bool, len(results))
+	for _, res := range results {
+		haveResult[res.TeamID] = true
+	}
+
+	allComplete := len(validTeamIDs) > 0
+	for teamID := range validTeamIDs {
+		if !haveResult[teamID] {
+			allComplete = false
+			break
+		}
+	}
+
+	if allComplete {
 		if err := s.rounds.SetStatus(roundID, round.StatusClosed); err != nil {
 			http.Error(w, "could not close round", http.StatusInternalServerError)
 			return
