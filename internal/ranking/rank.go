@@ -25,7 +25,12 @@ func statusOrder(s Status) int {
 	case StatusDNS:
 		return 3
 	default:
-		return 0
+		// An unrecognized status is treated as worse than every known
+		// status (including DNS, currently the worst) rather than tying
+		// with "has a time" (which would sort it ahead of every
+		// correctly-cased DNF/DSQ/DNS team and silently corrupt
+		// reseeding and division-cut results).
+		return 4
 	}
 }
 

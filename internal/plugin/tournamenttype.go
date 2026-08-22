@@ -1,12 +1,25 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	lua "github.com/yuin/gopher-lua"
 
 	"tournamentstudio/internal/ranking"
 )
+
+// pluginCallTimeout bounds how long a single Lua plugin call (
+// next_round_groups or division_cuts) may run before it is aborted. Both
+// calls are meant to be fast pure computation; a plugin that loops forever
+// would otherwise hang the request goroutine and hold the plugin's mutex
+// forever, blocking every subsequent call for every tournament using it.
+//
+// This is a var (not a const) so tests can temporarily shrink it to avoid
+// a multi-second test for the infinite-loop case; production code must
+// never change it.
+var pluginCallTimeout = 5 * time.Second
 
 // NextRoundGroups calls the plugin's next_round_groups(groups) function.
 // groups[i] must already be sorted fastest-first (see ranking.Rank) —
@@ -16,6 +29,11 @@ func (t *TournamentTypePlugin) NextRoundGroups(groups [][]ranking.TeamResult) ([
 	defer t.mu.Unlock()
 
 	L := t.state
+
+	ctx, cancel := context.WithTimeout(context.Background(), pluginCallTimeout)
+	defer cancel()
+	L.SetContext(ctx)
+	defer L.RemoveContext()
 
 	groupsTbl := L.NewTable()
 	for _, group := range groups {

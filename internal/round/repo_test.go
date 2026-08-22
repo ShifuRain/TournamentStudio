@@ -134,6 +134,49 @@ func TestSubmitAndListResults(t *testing.T) {
 	}
 }
 
+func TestSubmitResultsWritesAllRowsInOneTransaction(t *testing.T) {
+	s := newTestStore(t)
+	tournamentID := seedTournament(t, s)
+	repo := NewRepo(s)
+
+	pr, _, err := repo.CreateRound(tournamentID, 1, [][]string{{"t1", "t2", "t3"}})
+	if err != nil {
+		t.Fatalf("CreateRound: %v", err)
+	}
+
+	timeVal := 124.11
+	batch := []Result{
+		{TeamID: "t1", TimeSeconds: &timeVal},
+		{TeamID: "t2", Status: "DNF"},
+		{TeamID: "t3", Status: "DSQ"},
+	}
+	if err := repo.SubmitResults(pr.ID, batch); err != nil {
+		t.Fatalf("SubmitResults: %v", err)
+	}
+
+	results, err := repo.ListResults(pr.ID)
+	if err != nil {
+		t.Fatalf("ListResults: %v", err)
+	}
+	if len(results) != 3 {
+		t.Fatalf("expected 3 results written, got %d", len(results))
+	}
+
+	byTeam := make(map[string]Result, len(results))
+	for _, res := range results {
+		byTeam[res.TeamID] = res
+	}
+	if byTeam["t1"].TimeSeconds == nil || *byTeam["t1"].TimeSeconds != 124.11 {
+		t.Fatalf("unexpected t1 result: %+v", byTeam["t1"])
+	}
+	if byTeam["t2"].Status != "DNF" {
+		t.Fatalf("unexpected t2 result: %+v", byTeam["t2"])
+	}
+	if byTeam["t3"].Status != "DSQ" {
+		t.Fatalf("unexpected t3 result: %+v", byTeam["t3"])
+	}
+}
+
 func TestSubmitResultUpsertsOnResubmission(t *testing.T) {
 	s := newTestStore(t)
 	tournamentID := seedTournament(t, s)

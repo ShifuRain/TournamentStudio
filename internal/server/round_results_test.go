@@ -150,6 +150,60 @@ func TestSubmitResultsAllowsTimeEntryRole(t *testing.T) {
 	}
 }
 
+func TestSubmitResultsRejectsInvalidStatus(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+	tournamentID := createTestTournament(t, s, token)
+	roundID := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
+
+	body, _ := json.Marshal(map[string]any{"t1": map[string]any{"status": "dnf"}})
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for lowercase status, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	body2, _ := json.Marshal(map[string]any{"t2": map[string]any{"status": "MAYBE"}})
+	req2 := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body2))
+	req2.Header.Set("Authorization", "Bearer "+token)
+	rec2 := httptest.NewRecorder()
+	s.ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for unrecognized status, got %d: %s", rec2.Code, rec2.Body.String())
+	}
+}
+
+func TestSubmitResultsInvalidEntryLeavesNothingCommitted(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+	tournamentID := createTestTournament(t, s, token)
+	roundID := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
+
+	// t1 is valid, t2 has an invalid status. Regardless of map iteration
+	// order, the whole request must be rejected with nothing written.
+	body, _ := json.Marshal(map[string]any{
+		"t1": map[string]any{"time_seconds": 100.0},
+		"t2": map[string]any{"status": "not-a-real-status"},
+	})
+	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	s.ServeHTTP(rec, req)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	results, err := s.rounds.ListResults(roundID)
+	if err != nil {
+		t.Fatalf("ListResults: %v", err)
+	}
+	if len(results) != 0 {
+		t.Fatalf("expected zero results committed after a rejected batch, got %d: %+v", len(results), results)
+	}
+}
+
 func TestSubmitResultsForbiddenForSpectator(t *testing.T) {
 	s := newTestServer(t)
 	organizerToken := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)

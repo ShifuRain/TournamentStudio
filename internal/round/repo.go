@@ -106,13 +106,31 @@ func (r *Repo) SetStatus(roundID int64, status Status) error {
 	return err
 }
 
+const submitResultSQL = `INSERT INTO round_results (round_id, team_id, time_seconds, status) VALUES (?, ?, ?, ?)
+	 ON CONFLICT(round_id, team_id) DO UPDATE SET time_seconds = excluded.time_seconds, status = excluded.status`
+
 func (r *Repo) SubmitResult(roundID int64, res Result) error {
-	_, err := r.db.Exec(
-		`INSERT INTO round_results (round_id, team_id, time_seconds, status) VALUES (?, ?, ?, ?)
-		 ON CONFLICT(round_id, team_id) DO UPDATE SET time_seconds = excluded.time_seconds, status = excluded.status`,
-		roundID, res.TeamID, res.TimeSeconds, nullIfEmpty(res.Status),
-	)
+	_, err := r.db.Exec(submitResultSQL, roundID, res.TeamID, res.TimeSeconds, nullIfEmpty(res.Status))
 	return err
+}
+
+// SubmitResults writes all of results in a single transaction, rolling back
+// and returning an error if any write fails, so a batch submission never
+// partially commits.
+func (r *Repo) SubmitResults(roundID int64, results []Result) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+
+	for _, res := range results {
+		if _, err := tx.Exec(submitResultSQL, roundID, res.TeamID, res.TimeSeconds, nullIfEmpty(res.Status)); err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *Repo) ListResults(roundID int64) ([]Result, error) {

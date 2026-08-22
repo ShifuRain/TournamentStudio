@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"fmt"
 
 	lua "github.com/yuin/gopher-lua"
@@ -24,6 +25,11 @@ func (t *TournamentTypePlugin) DivisionCuts(rankedTeamIDs []string, cuts []Cut) 
 	defer t.mu.Unlock()
 
 	L := t.state
+
+	ctx, cancel := context.WithTimeout(context.Background(), pluginCallTimeout)
+	defer cancel()
+	L.SetContext(ctx)
+	defer L.RemoveContext()
 
 	rankedTbl := L.NewTable()
 	for _, id := range rankedTeamIDs {
