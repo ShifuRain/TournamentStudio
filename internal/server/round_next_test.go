@@ -22,7 +22,7 @@ func TestNextRoundComputesReseededGroups(t *testing.T) {
 		{"B1", "B2", "B3", "B4"},
 	})
 
-	resultsBody, _ := json.Marshal(resultsBodyFor(ids,
+	submitHeatResultsForRound(t, s, token, tournamentID, roundID, ids,
 		"A1", map[string]any{"time_seconds": 120.0},
 		"A2", map[string]any{"time_seconds": 121.0},
 		"A3", map[string]any{"time_seconds": 122.0},
@@ -31,14 +31,7 @@ func TestNextRoundComputesReseededGroups(t *testing.T) {
 		"B2", map[string]any{"time_seconds": 121.0},
 		"B3", map[string]any{"time_seconds": 122.0},
 		"B4", map[string]any{"time_seconds": 123.0},
-	))
-	resultsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(resultsBody))
-	resultsReq.Header.Set("Authorization", "Bearer "+token)
-	resultsRec := httptest.NewRecorder()
-	s.ServeHTTP(resultsRec, resultsReq)
-	if resultsRec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", resultsRec.Code, resultsRec.Body.String())
-	}
+	)
 
 	nextReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/next", tournamentID, roundID), nil)
 	nextReq.Header.Set("Authorization", "Bearer "+token)
@@ -144,17 +137,11 @@ func TestFullRoundLifecycleWithRealTeams(t *testing.T) {
 		t.Fatalf("decode created round: %v", err)
 	}
 
-	resultsBody, _ := json.Marshal(map[string]any{
-		team1: map[string]any{"time_seconds": 118.4},
-		team2: map[string]any{"time_seconds": 121.9},
-	})
-	resultsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, createdRound.ID), bytes.NewReader(resultsBody))
-	resultsReq.Header.Set("Authorization", "Bearer "+token)
-	resultsRec := httptest.NewRecorder()
-	s.ServeHTTP(resultsRec, resultsReq)
-	if resultsRec.Code != http.StatusOK {
-		t.Fatalf("submit results: expected 200, got %d: %s", resultsRec.Code, resultsRec.Body.String())
-	}
+	submitHeatResultsForRound(t, s, token, tournamentID, createdRound.ID,
+		map[string]string{"team1": team1, "team2": team2},
+		"team1", map[string]any{"time_seconds": 118.4},
+		"team2", map[string]any{"time_seconds": 121.9},
+	)
 
 	nextReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/next", tournamentID, createdRound.ID), nil)
 	nextReq.Header.Set("Authorization", "Bearer "+token)
@@ -198,17 +185,10 @@ func TestNextRoundIsIdempotentAgainstDoubleSubmission(t *testing.T) {
 	tournamentID := createTestTournament(t, s, token)
 	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
 
-	resultsBody, _ := json.Marshal(resultsBodyFor(ids,
+	submitHeatResultsForRound(t, s, token, tournamentID, roundID, ids,
 		"t1", map[string]any{"time_seconds": 100.0},
 		"t2", map[string]any{"time_seconds": 110.0},
-	))
-	resultsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(resultsBody))
-	resultsReq.Header.Set("Authorization", "Bearer "+token)
-	resultsRec := httptest.NewRecorder()
-	s.ServeHTTP(resultsRec, resultsReq)
-	if resultsRec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", resultsRec.Code, resultsRec.Body.String())
-	}
+	)
 
 	doNext := func() *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/next", tournamentID, roundID), nil)

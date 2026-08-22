@@ -9,8 +9,6 @@ import (
 	"strconv"
 	"testing"
 
-	"tournamentstudio/internal/auth"
-	"tournamentstudio/internal/round"
 	"tournamentstudio/internal/team"
 )
 
@@ -112,195 +110,53 @@ func mapLabels(ids map[string]string, labels ...string) []string {
 	return out
 }
 
-func TestSubmitResultsClosesRoundWhenComplete(t *testing.T) {
-	s := newTestServer(t)
-	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, token)
-	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
+// submitHeatResultsForRound schedules every group of roundID onto a
+// single freshly created course (via scheduleTestRound, defined in
+// heat_results_test.go), then submits results for each of that
+// course's heats via the real per-heat results endpoint, keyed by the
+// label -> real-team-ID map createTestRound returns. It's the drop-in
+// replacement for the old round-level "POST .../rounds/{id}/results"
+// call every test in this package used before this task retired that
+// endpoint. pairs is a flat label/entry sequence, e.g. "t1",
+// map[string]any{"time_seconds": 100.0}, "t2", map[string]any{"status": "DNF"}.
+func submitHeatResultsForRound(t *testing.T, s *Server, token string, tournamentID, roundID int64, ids map[string]string, pairs ...any) {
+	t.Helper()
 
-	partialBody, _ := json.Marshal(resultsBodyFor(ids, "t1", map[string]any{"time_seconds": 124.5}))
-	partialReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(partialBody))
-	partialReq.Header.Set("Authorization", "Bearer "+token)
-	partialRec := httptest.NewRecorder()
-	s.ServeHTTP(partialRec, partialReq)
-	if partialRec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", partialRec.Code, partialRec.Body.String())
-	}
-
-	pr, err := s.rounds.GetRound(roundID)
+	heatByGroup := scheduleTestRound(t, s, token, tournamentID, roundID)
+	groups, err := s.rounds.ListGroups(roundID)
 	if err != nil {
-		t.Fatalf("GetRound: %v", err)
+		t.Fatalf("ListGroups: %v", err)
 	}
-	if pr.Status != round.StatusOpen {
-		t.Fatalf("expected round still open after partial submission, got %s", pr.Status)
-	}
-
-	remainingBody, _ := json.Marshal(resultsBodyFor(ids, "t2", map[string]any{"status": "DNF"}))
-	remainingReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(remainingBody))
-	remainingReq.Header.Set("Authorization", "Bearer "+token)
-	remainingRec := httptest.NewRecorder()
-	s.ServeHTTP(remainingRec, remainingReq)
-	if remainingRec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", remainingRec.Code, remainingRec.Body.String())
+	groupOf := make(map[string]int64, len(groups))
+	for _, g := range groups {
+		for _, teamID := range g.TeamIDs {
+			groupOf[teamID] = g.ID
+		}
 	}
 
-	pr2, err := s.rounds.GetRound(roundID)
-	if err != nil {
-		t.Fatalf("GetRound: %v", err)
-	}
-	if pr2.Status != round.StatusClosed {
-		t.Fatalf("expected round closed after all results submitted, got %s", pr2.Status)
-	}
-}
-
-func TestSubmitResultsExtraUnknownTeamIDDoesNotSubstituteForMissingRealTeam(t *testing.T) {
-	s := newTestServer(t)
-	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, token)
-	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
-
-	// Submit results for all real teams (t1, t2) plus one extra team_id
-	// that does not belong to any group in this round. The round should
-	// still close: all real teams are covered, and the extra key doesn't
-	// block closing.
-	allPlusExtraBody, _ := json.Marshal(resultsBodyFor(ids,
-		"t1", map[string]any{"time_seconds": 100.0},
-		"t2", map[string]any{"time_seconds": 110.0},
-		"ghostt1", map[string]any{"time_seconds": 999.0},
-	))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(allPlusExtraBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	byGroup := make(map[int64]map[string]any)
+	for i := 0; i < len(pairs); i += 2 {
+		label := pairs[i].(string)
+		entry := pairs[i+1]
+		teamID, ok := ids[label]
+		if !ok {
+			t.Fatalf("unknown label %q", label)
+		}
+		groupID, ok := groupOf[teamID]
+		if !ok {
+			t.Fatalf("team %q (label %q) is not in any of round %d's groups", teamID, label, roundID)
+		}
+		if byGroup[groupID] == nil {
+			byGroup[groupID] = make(map[string]any)
+		}
+		byGroup[groupID][teamID] = entry
 	}
 
-	pr, err := s.rounds.GetRound(roundID)
-	if err != nil {
-		t.Fatalf("GetRound: %v", err)
-	}
-	if pr.Status != round.StatusClosed {
-		t.Fatalf("expected round closed when all real teams covered (plus an extra unknown team_id), got %s", pr.Status)
-	}
-}
-
-func TestSubmitResultsExtraUnknownTeamIDDoesNotAutoCloseWhenRealTeamMissing(t *testing.T) {
-	s := newTestServer(t)
-	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, token)
-	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
-
-	// Submit results for only one of the two real teams (t1) plus one
-	// bogus extra team_id, so len(results) == 2 by count (matching the
-	// number of real teams) but t2, a real team, is still missing. The
-	// round must stay open. This is the case the original count-based
-	// bug got wrong.
-	oneRealPlusExtraBody, _ := json.Marshal(resultsBodyFor(ids,
-		"t1", map[string]any{"time_seconds": 100.0},
-		"ghostt1", map[string]any{"time_seconds": 999.0},
-	))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(oneRealPlusExtraBody))
-	req.Header.Set("Authorization", "Bearer "+token)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	pr, err := s.rounds.GetRound(roundID)
-	if err != nil {
-		t.Fatalf("GetRound: %v", err)
-	}
-	if pr.Status != round.StatusOpen {
-		t.Fatalf("expected round to stay open when a real team (t2) is missing a result, even though result count matches team count via a bogus extra team_id; got %s", pr.Status)
-	}
-}
-
-func TestSubmitResultsAllowsTimeEntryRole(t *testing.T) {
-	s := newTestServer(t)
-	organizerToken := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, organizerToken)
-	roundID, ids := createTestRound(t, s, organizerToken, tournamentID, [][]string{{"t1"}})
-
-	timeEntryToken := loginAs(t, s, "timekeeper1", "pw", auth.RoleTimeEntry)
-	body, _ := json.Marshal(resultsBodyFor(ids, "t1", map[string]any{"time_seconds": 100.0}))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+timeEntryToken)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected 200 for time_entry role, got %d: %s", rec.Code, rec.Body.String())
-	}
-}
-
-func TestSubmitResultsRejectsInvalidStatus(t *testing.T) {
-	s := newTestServer(t)
-	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, token)
-	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
-
-	body, _ := json.Marshal(resultsBodyFor(ids, "t1", map[string]any{"status": "dnf"}))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+token)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 for lowercase status, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	body2, _ := json.Marshal(resultsBodyFor(ids, "t2", map[string]any{"status": "MAYBE"}))
-	req2 := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body2))
-	req2.Header.Set("Authorization", "Bearer "+token)
-	rec2 := httptest.NewRecorder()
-	s.ServeHTTP(rec2, req2)
-	if rec2.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 for unrecognized status, got %d: %s", rec2.Code, rec2.Body.String())
-	}
-}
-
-func TestSubmitResultsInvalidEntryLeavesNothingCommitted(t *testing.T) {
-	s := newTestServer(t)
-	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, token)
-	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
-
-	// t1 is valid, t2 has an invalid status. Regardless of map iteration
-	// order, the whole request must be rejected with nothing written.
-	body, _ := json.Marshal(resultsBodyFor(ids,
-		"t1", map[string]any{"time_seconds": 100.0},
-		"t2", map[string]any{"status": "not-a-real-status"},
-	))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+token)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d: %s", rec.Code, rec.Body.String())
-	}
-
-	results, err := s.rounds.ListResults(roundID)
-	if err != nil {
-		t.Fatalf("ListResults: %v", err)
-	}
-	if len(results) != 0 {
-		t.Fatalf("expected zero results committed after a rejected batch, got %d: %+v", len(results), results)
-	}
-}
-
-func TestSubmitResultsForbiddenForSpectator(t *testing.T) {
-	s := newTestServer(t)
-	organizerToken := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
-	tournamentID := createTestTournament(t, s, organizerToken)
-	roundID, ids := createTestRound(t, s, organizerToken, tournamentID, [][]string{{"t1"}})
-
-	spectatorToken := loginAs(t, s, "spectator1", "pw", auth.RoleSpectator)
-	body, _ := json.Marshal(resultsBodyFor(ids, "t1", map[string]any{"time_seconds": 100.0}))
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(body))
-	req.Header.Set("Authorization", "Bearer "+spectatorToken)
-	rec := httptest.NewRecorder()
-	s.ServeHTTP(rec, req)
-	if rec.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d", rec.Code)
+	for groupID, body := range byGroup {
+		heatID := heatByGroup[groupID]
+		rec := submitHeatResults(t, s, token, tournamentID, heatID, body)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("submit heat results for group %d: expected 200, got %d: %s", groupID, rec.Code, rec.Body.String())
+		}
 	}
 }

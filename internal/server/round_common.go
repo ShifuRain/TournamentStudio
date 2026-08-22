@@ -6,6 +6,7 @@ import (
 
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/round"
+	"tournamentstudio/internal/schedule"
 	"tournamentstudio/internal/tournament"
 )
 
@@ -28,7 +29,7 @@ type roundContext struct {
 	tournament    *tournament.Tournament
 	ttp           *plugin.TournamentTypePlugin
 	groups        []round.Group
-	resultsByTeam map[string]round.Result
+	resultsByTeam map[string]schedule.HeatResult
 }
 
 // loadClosedRoundContext parses the {id}/{round_id} path values, loads the
@@ -83,12 +84,12 @@ func (s *Server) loadClosedRoundContext(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "could not list groups", http.StatusInternalServerError)
 		return nil, false
 	}
-	results, err := s.rounds.ListResults(roundID)
+	results, err := s.schedule.ListResultsForRound(roundID)
 	if err != nil {
 		http.Error(w, "could not list results", http.StatusInternalServerError)
 		return nil, false
 	}
-	resultsByTeam := make(map[string]round.Result, len(results))
+	resultsByTeam := make(map[string]schedule.HeatResult, len(results))
 	for _, res := range results {
 		resultsByTeam[res.TeamID] = res
 	}

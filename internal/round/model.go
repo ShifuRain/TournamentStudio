@@ -19,9 +19,3 @@ type Group struct {
 	RoundID int64
 	TeamIDs []string
 }
-
-type Result struct {
-	TeamID      string
-	TimeSeconds *float64
-	Status      string
-}

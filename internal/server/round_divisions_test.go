@@ -21,7 +21,7 @@ func TestComputeDivisionsSplitsRankedTeams(t *testing.T) {
 		{"t5", "t6", "t7", "t8"},
 	})
 
-	resultsBody, _ := json.Marshal(resultsBodyFor(ids,
+	submitHeatResultsForRound(t, s, token, tournamentID, roundID, ids,
 		"t1", map[string]any{"time_seconds": 100.0},
 		"t2", map[string]any{"time_seconds": 110.0},
 		"t3", map[string]any{"time_seconds": 200.0},
@@ -30,11 +30,7 @@ func TestComputeDivisionsSplitsRankedTeams(t *testing.T) {
 		"t6", map[string]any{"time_seconds": 115.0},
 		"t7", map[string]any{"time_seconds": 205.0},
 		"t8", map[string]any{"time_seconds": 215.0},
-	))
-	resultsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(resultsBody))
-	resultsReq.Header.Set("Authorization", "Bearer "+token)
-	resultsRec := httptest.NewRecorder()
-	s.ServeHTTP(resultsRec, resultsReq)
+	)
 
 	divisionsBody, _ := json.Marshal(map[string]any{
 		"cuts": []map[string]any{
