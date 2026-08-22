@@ -20,6 +20,7 @@ type Server struct {
 	teams       *team.Repo
 	plugins     *plugin.Engine
 	rounds      *round.Repo
+	hub         *broadcastHub
 }
 
 func New(s *store.Store, plugins *plugin.Engine) *Server {
@@ -31,6 +32,7 @@ func New(s *store.Store, plugins *plugin.Engine) *Server {
 		teams:       team.NewRepo(s),
 		plugins:     plugins,
 		rounds:      round.NewRepo(s),
+		hub:         newBroadcastHub(),
 	}
 	srv.routes()
 	return srv
@@ -57,6 +59,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/next", organizerOnly(http.HandlerFunc(s.handleNextRound)))
 	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/divisions", organizerOnly(http.HandlerFunc(s.handleComputeDivisions)))
 	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
+	s.mux.HandleFunc("GET /api/tournaments/{id}/ws", s.handleWebSocket)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
