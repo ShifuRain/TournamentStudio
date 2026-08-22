@@ -207,9 +207,13 @@ division results (same heat-results endpoint)** → division heats close
 
 ## 6. WebSocket Live Broadcast
 
-- **Library:** `nhooyr.io/websocket` — pure Go, no CGo, actively
-  maintained, matching the project's existing pure-Go dependency
-  constraint (the SQLite driver and Lua runtime are both pure Go).
+- **Library:** `github.com/coder/websocket` — pure Go, no CGo, actively
+  maintained (the actively-developed successor to the now-deprecated
+  `nhooyr.io/websocket`, same author, identical API, confirmed by
+  downloading and diffing both package docs), matching the project's
+  existing pure-Go dependency constraint (the SQLite driver and Lua
+  runtime are both pure Go). Requires Go >= 1.23; this project's `go.mod`
+  already pins 1.25.
 - **Connection:** `GET /api/tournaments/{id}/ws?token=<session-token>`.
   The token is a query parameter rather than an `Authorization` header
   because browsers cannot set custom headers on a WebSocket handshake —
