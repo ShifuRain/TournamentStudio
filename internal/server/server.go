@@ -69,6 +69,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/heats/{heat_id}/results", resultsWriter(http.HandlerFunc(s.handleSubmitHeatResults)))
 	s.mux.Handle("POST /api/tournaments/{id}/divisions/schedule", organizerOnly(http.HandlerFunc(s.handleScheduleDivisions)))
 	s.mux.Handle("PATCH /api/tournaments/{id}/heats/{heat_id}", organizerOnly(http.HandlerFunc(s.handleUpdateHeat)))
+	s.mux.Handle("GET /api/tournaments/{id}/schedule", authenticated(http.HandlerFunc(s.handleGetSchedule)))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

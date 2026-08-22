@@ -155,6 +155,38 @@ func TestGetHeatNotFound(t *testing.T) {
 	}
 }
 
+func TestListHeatsForTournament(t *testing.T) {
+	r := newTestRepo(t)
+	tournamentA := seedTournament(t, r)
+	tournamentB := seedTournament(t, r)
+	roundA := seedRound(t, r, tournamentA, 1)
+	roundB := seedRound(t, r, tournamentB, 1)
+	groupA := seedGroup(t, r, roundA)
+	groupB := seedGroup(t, r, roundB)
+	courseA, err := r.CreateCourse(tournamentA, "Course A", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	courseB, err := r.CreateCourse(tournamentB, "Course B", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	if _, err := r.ScheduleGroupHeats(tournamentA, roundA, []GroupAssignment{{GroupID: groupA, CourseID: courseA.ID}}, nil); err != nil {
+		t.Fatalf("ScheduleGroupHeats (tournamentA): %v", err)
+	}
+	if _, err := r.ScheduleGroupHeats(tournamentB, roundB, []GroupAssignment{{GroupID: groupB, CourseID: courseB.ID}}, nil); err != nil {
+		t.Fatalf("ScheduleGroupHeats (tournamentB): %v", err)
+	}
+
+	heats, err := r.ListHeatsForTournament(tournamentA)
+	if err != nil {
+		t.Fatalf("ListHeatsForTournament: %v", err)
+	}
+	if len(heats) != 1 {
+		t.Fatalf("expected 1 heat for tournamentA, got %d", len(heats))
+	}
+}
+
 func TestScheduleDivisionHeatsAutoSequencesOnSameCourse(t *testing.T) {
 	r := newTestRepo(t)
 	tournamentID := seedTournament(t, r)

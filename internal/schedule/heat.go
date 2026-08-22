@@ -264,6 +264,36 @@ func (r *Repo) UpdateHeatPlannedStart(id int64, start time.Time) (*Heat, error) 
 	return r.GetHeat(id)
 }
 
+// ListHeatsForTournament returns every heat belonging to tournamentID --
+// both round-group heats and division heats alike, since Heat.RoundID
+// always resolves back to a pre_phase_rounds row, which always carries
+// a tournament_id -- ordered by PlannedStart, the natural schedule
+// order.
+func (r *Repo) ListHeatsForTournament(tournamentID int64) ([]Heat, error) {
+	rows, err := r.db.Query(
+		`SELECT h.id, h.round_id, h.group_id, h.division_id, h.course_id, h.planned_start, h.status
+		 FROM heats h
+		 JOIN pre_phase_rounds pr ON pr.id = h.round_id
+		 WHERE pr.tournament_id = ?
+		 ORDER BY h.planned_start`,
+		tournamentID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var heats []Heat
+	for rows.Next() {
+		h, err := scanHeatRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		heats = append(heats, h)
+	}
+	return heats, rows.Err()
+}
+
 func (r *Repo) GetHeat(id int64) (*Heat, error) {
 	row := r.db.QueryRow(
 		`SELECT id, round_id, group_id, division_id, course_id, planned_start, status FROM heats WHERE id = ?`,
