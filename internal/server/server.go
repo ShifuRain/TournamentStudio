@@ -7,6 +7,7 @@ import (
 	"tournamentstudio/internal/auth"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/round"
+	"tournamentstudio/internal/schedule"
 	"tournamentstudio/internal/store"
 	"tournamentstudio/internal/team"
 	"tournamentstudio/internal/tournament"
@@ -21,6 +22,7 @@ type Server struct {
 	plugins     *plugin.Engine
 	rounds      *round.Repo
 	hub         *broadcastHub
+	schedule    *schedule.Repo
 }
 
 func New(s *store.Store, plugins *plugin.Engine) *Server {
@@ -33,6 +35,7 @@ func New(s *store.Store, plugins *plugin.Engine) *Server {
 		plugins:     plugins,
 		rounds:      round.NewRepo(s),
 		hub:         newBroadcastHub(),
+		schedule:    schedule.NewRepo(s),
 	}
 	srv.routes()
 	return srv
@@ -60,6 +63,9 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/divisions", organizerOnly(http.HandlerFunc(s.handleComputeDivisions)))
 	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
 	s.mux.HandleFunc("GET /api/tournaments/{id}/ws", s.handleWebSocket)
+	s.mux.Handle("POST /api/tournaments/{id}/courses", organizerOnly(http.HandlerFunc(s.handleCreateCourse)))
+	s.mux.Handle("GET /api/tournaments/{id}/courses", authenticated(http.HandlerFunc(s.handleListCourses)))
+	s.mux.Handle("PATCH /api/tournaments/{id}/courses/{course_id}", organizerOnly(http.HandlerFunc(s.handleUpdateCourse)))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
