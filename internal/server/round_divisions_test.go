@@ -78,4 +78,18 @@ func TestComputeDivisionsSplitsRankedTeams(t *testing.T) {
 	if !reflect.DeepEqual(resp.Divisions[1].TeamIDs, wantFinal) {
 		t.Fatalf("expected Final team_ids %v, got %v", wantFinal, resp.Divisions[1].TeamIDs)
 	}
+
+	persisted, err := s.schedule.ListDivisionsForRound(roundID)
+	if err != nil {
+		t.Fatalf("ListDivisionsForRound: %v", err)
+	}
+	if len(persisted) != 2 {
+		t.Fatalf("expected 2 persisted divisions, got %d", len(persisted))
+	}
+	if persisted[0].Name != "Gold Final" || len(persisted[0].TeamIDs) != 3 {
+		t.Fatalf("unexpected persisted Gold Final: %+v", persisted[0])
+	}
+	if persisted[1].Name != "Final" || len(persisted[1].TeamIDs) != 5 {
+		t.Fatalf("unexpected persisted Final: %+v", persisted[1])
+	}
 }

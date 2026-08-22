@@ -33,3 +33,11 @@ type HeatResult struct {
 	TimeSeconds *float64 `json:"time_seconds"`
 	Status      string   `json:"status"`
 }
+
+type Division struct {
+	ID           int64
+	TournamentID int64
+	RoundID      int64
+	Name         string
+	TeamIDs      []string
+}

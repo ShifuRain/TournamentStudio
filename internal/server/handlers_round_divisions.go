@@ -6,10 +6,17 @@ import (
 
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/ranking"
+	"tournamentstudio/internal/schedule"
 )
 
 type computeDivisionsRequest struct {
 	Cuts []plugin.Cut `json:"cuts"`
+}
+
+type divisionResponse struct {
+	ID      int64    `json:"id"`
+	Name    string   `json:"name"`
+	TeamIDs []string `json:"team_ids"`
 }
 
 func (s *Server) handleComputeDivisions(w http.ResponseWriter, r *http.Request) {
@@ -47,6 +54,21 @@ func (s *Server) handleComputeDivisions(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	newDivisions := make([]schedule.NewDivision, len(divisions))
+	for i, d := range divisions {
+		newDivisions[i] = schedule.NewDivision{Name: d.Name, TeamIDs: d.TeamIDs}
+	}
+	created, err := s.schedule.CreateDivisions(ctx.tournamentID, ctx.round.ID, newDivisions)
+	if err != nil {
+		http.Error(w, "could not save divisions", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]divisionResponse, len(created))
+	for i, d := range created {
+		resp[i] = divisionResponse{ID: d.ID, Name: d.Name, TeamIDs: d.TeamIDs}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"divisions": divisions})
+	json.NewEncoder(w).Encode(map[string]any{"divisions": resp})
 }
