@@ -83,6 +83,7 @@ HeatResult {
 Division {
   ID, TournamentID, RoundID int64,  // the closed round it was cut from
   Name string,
+  TeamIDs []string,  // stored as a JSON TEXT column, same pattern as Group.TeamIDs
 }
 ```
 
@@ -106,6 +107,10 @@ Division {
   closes once its `HeatResult`s cover every team in its group/division
   (same auto-close logic Plan 2 built, moved one level down, reusing the
   team-conservation-style validation Plan 2's final review added).
+  `Division.TeamIDs` is what makes this possible for a division's heat —
+  without it, a division's heat would have no team list to check
+  completeness against, exactly the role `Group.TeamIDs` already plays
+  for a round's heat.
 - `round.Group`, `round.PrePhaseRound`, and the entire Plan 2 plugin
   engine are untouched by this plan.
 
