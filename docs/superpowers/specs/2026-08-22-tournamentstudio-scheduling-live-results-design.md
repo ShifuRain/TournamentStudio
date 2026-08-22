@@ -69,7 +69,13 @@ Course {
 }
 
 Heat {
-  ID, GroupID *int64, DivisionID *int64,  // exactly one is set
+  ID, RoundID int64,  // RoundID is denormalized: the group's or division's
+                       // round, always set regardless of which of the two
+                       // fields below is set — simplifies the round-closure
+                       // cascade check and the GET /schedule query to a
+                       // single WHERE round_id = ?, instead of joining
+                       // through groups/divisions on every read
+  GroupID *int64, DivisionID *int64,  // exactly one is set
   CourseID int64,
   PlannedStart time.Time,
   Status string,  // "scheduled" | "closed"
