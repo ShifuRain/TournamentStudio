@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"tournamentstudio/internal/auth"
@@ -60,6 +61,15 @@ func TestNextRoundComputesReseededGroups(t *testing.T) {
 	}
 	if len(next.Groups) != 2 {
 		t.Fatalf("expected 2 groups, got %d", len(next.Groups))
+	}
+
+	wantGroup0 := []string{"A1", "A2", "B3", "B4"}
+	wantGroup1 := []string{"A3", "A4", "B1", "B2"}
+	if !reflect.DeepEqual(next.Groups[0].TeamIDs, wantGroup0) {
+		t.Fatalf("expected group 0 team_ids %v, got %v", wantGroup0, next.Groups[0].TeamIDs)
+	}
+	if !reflect.DeepEqual(next.Groups[1].TeamIDs, wantGroup1) {
+		t.Fatalf("expected group 1 team_ids %v, got %v", wantGroup1, next.Groups[1].TeamIDs)
 	}
 }
 
