@@ -121,19 +121,16 @@ func courseAnchor(tx *sql.Tx, courseID int64, startAt *time.Time) (time.Time, er
 	return t.Add(time.Duration(intervalSeconds) * time.Second), nil
 }
 
-func (r *Repo) GetHeat(id int64) (*Heat, error) {
-	row := r.db.QueryRow(
-		`SELECT id, round_id, group_id, division_id, course_id, planned_start, status FROM heats WHERE id = ?`,
-		id,
-	)
+type rowScanner interface {
+	Scan(dest ...any) error
+}
+
+func scanHeatRow(row rowScanner) (Heat, error) {
 	var h Heat
 	var groupID, divisionID sql.NullInt64
 	var plannedStart, status string
 	if err := row.Scan(&h.ID, &h.RoundID, &groupID, &divisionID, &h.CourseID, &plannedStart, &status); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, ErrHeatNotFound
-		}
-		return nil, err
+		return Heat{}, err
 	}
 	if groupID.Valid {
 		v := groupID.Int64
@@ -145,9 +142,24 @@ func (r *Repo) GetHeat(id int64) (*Heat, error) {
 	}
 	t, err := time.Parse(time.RFC3339, plannedStart)
 	if err != nil {
-		return nil, err
+		return Heat{}, err
 	}
 	h.PlannedStart = t
 	h.Status = HeatStatus(status)
+	return h, nil
+}
+
+func (r *Repo) GetHeat(id int64) (*Heat, error) {
+	row := r.db.QueryRow(
+		`SELECT id, round_id, group_id, division_id, course_id, planned_start, status FROM heats WHERE id = ?`,
+		id,
+	)
+	h, err := scanHeatRow(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrHeatNotFound
+		}
+		return nil, err
+	}
 	return &h, nil
 }

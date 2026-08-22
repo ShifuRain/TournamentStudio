@@ -207,3 +207,26 @@ func TestSubmitResultUpsertsOnResubmission(t *testing.T) {
 		t.Fatalf("expected corrected time 124.11, got %v", *results[0].TimeSeconds)
 	}
 }
+
+func TestGetGroup(t *testing.T) {
+	s := newTestStore(t)
+	tournamentID := seedTournament(t, s)
+	repo := NewRepo(s)
+
+	_, groups, err := repo.CreateRound(tournamentID, 1, [][]string{{"t1", "t2"}})
+	if err != nil {
+		t.Fatalf("CreateRound: %v", err)
+	}
+
+	g, err := repo.GetGroup(groups[0].ID)
+	if err != nil {
+		t.Fatalf("GetGroup: %v", err)
+	}
+	if g.RoundID != groups[0].RoundID || len(g.TeamIDs) != 2 {
+		t.Fatalf("unexpected group: %+v", g)
+	}
+
+	if _, err := repo.GetGroup(999); err != ErrNotFound {
+		t.Fatalf("expected ErrNotFound, got %v", err)
+	}
+}

@@ -26,3 +26,10 @@ type Heat struct {
 	PlannedStart time.Time
 	Status       HeatStatus
 }
+
+type HeatResult struct {
+	HeatID      int64    `json:"heat_id"`
+	TeamID      string   `json:"team_id"`
+	TimeSeconds *float64 `json:"time_seconds"`
+	Status      string   `json:"status"`
+}

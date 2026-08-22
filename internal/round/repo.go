@@ -127,6 +127,22 @@ func (r *Repo) ListGroups(roundID int64) ([]Group, error) {
 	return groups, rows.Err()
 }
 
+func (r *Repo) GetGroup(id int64) (*Group, error) {
+	row := r.db.QueryRow(`SELECT id, round_id, team_ids FROM groups WHERE id = ?`, id)
+	var g Group
+	var teamIDsJSON string
+	if err := row.Scan(&g.ID, &g.RoundID, &teamIDsJSON); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	if err := json.Unmarshal([]byte(teamIDsJSON), &g.TeamIDs); err != nil {
+		return nil, err
+	}
+	return &g, nil
+}
+
 func (r *Repo) SetStatus(roundID int64, status Status) error {
 	_, err := r.db.Exec(`UPDATE pre_phase_rounds SET status = ? WHERE id = ?`, string(status), roundID)
 	return err
