@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"tournamentstudio/internal/round"
+	"tournamentstudio/internal/tournament"
 )
 
 type createRoundRequest struct {
@@ -45,6 +46,15 @@ func (s *Server) handleCreateRound(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, err := s.tournaments.Get(tournamentID); err != nil {
+		if err == tournament.ErrNotFound {
+			http.Error(w, "tournament not found", http.StatusNotFound)
+			return
+		}
+		http.Error(w, "could not look up tournament", http.StatusInternalServerError)
+		return
+	}
+
 	var req createRoundRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -57,6 +67,26 @@ func (s *Server) handleCreateRound(w http.ResponseWriter, r *http.Request) {
 	if len(req.Groups) == 0 {
 		http.Error(w, "at least one group is required", http.StatusBadRequest)
 		return
+	}
+
+	teams, err := s.teams.ListByTournament(tournamentID)
+	if err != nil {
+		http.Error(w, "could not list teams", http.StatusInternalServerError)
+		return
+	}
+	validTeamIDs := make(map[string]bool, len(teams))
+	for _, tm := range teams {
+		validTeamIDs[strconv.FormatInt(tm.ID, 10)] = true
+	}
+	seen := make(map[string]bool)
+	for _, group := range req.Groups {
+		for _, teamID := range group {
+			if !validTeamIDs[teamID] || seen[teamID] {
+				http.Error(w, "unknown or duplicate team_id in groups", http.StatusBadRequest)
+				return
+			}
+			seen[teamID] = true
+		}
 	}
 
 	pr, groups, err := s.rounds.CreateRound(tournamentID, req.RoundNumber, req.Groups)

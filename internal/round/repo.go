@@ -65,6 +65,32 @@ func (r *Repo) CreateRound(tournamentID int64, roundNumber int, groups [][]strin
 	return &PrePhaseRound{ID: roundID, TournamentID: tournamentID, RoundNumber: roundNumber, Status: StatusOpen}, createdGroups, nil
 }
 
+// CountRounds returns how many rounds exist for tournamentID with the
+// given round number. Under normal operation this is always 0 or 1 (the
+// unique index added in migration 0009 enforces that); it's exposed
+// mainly so tests can confirm a duplicate "next round" request was fully
+// rejected rather than merely returning an error after partially
+// succeeding.
+func (r *Repo) CountRounds(tournamentID int64, roundNumber int) (int, error) {
+	var count int
+	err := r.db.QueryRow(
+		`SELECT COUNT(*) FROM pre_phase_rounds WHERE tournament_id = ? AND round_number = ?`,
+		tournamentID, roundNumber,
+	).Scan(&count)
+	return count, err
+}
+
+// RoundExists reports whether a round with the given round number already
+// exists for the tournament, so callers can guard against creating a
+// duplicate (e.g. a double-submitted "next round" request).
+func (r *Repo) RoundExists(tournamentID int64, roundNumber int) (bool, error) {
+	count, err := r.CountRounds(tournamentID, roundNumber)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func (r *Repo) GetRound(id int64) (*PrePhaseRound, error) {
 	row := r.db.QueryRow(`SELECT id, tournament_id, round_number, status FROM pre_phase_rounds WHERE id = ?`, id)
 	var pr PrePhaseRound

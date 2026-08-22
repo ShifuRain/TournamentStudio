@@ -3,99 +3,88 @@ package server
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
-	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/ranking"
-	"tournamentstudio/internal/round"
 )
 
-func (s *Server) findTournamentType(id string) *plugin.TournamentTypePlugin {
-	for _, ttp := range s.plugins.TournamentTypes() {
-		if ttp.ID == id {
-			return ttp
-		}
-	}
-	return nil
-}
-
 func (s *Server) handleNextRound(w http.ResponseWriter, r *http.Request) {
-	tournamentID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid tournament id", http.StatusBadRequest)
-		return
-	}
-	roundID, err := strconv.ParseInt(r.PathValue("round_id"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid round id", http.StatusBadRequest)
+	ctx, ok := s.loadClosedRoundContext(w, r)
+	if !ok {
 		return
 	}
 
-	pr, err := s.rounds.GetRound(roundID)
+	nextRoundNumber := ctx.round.RoundNumber + 1
+	exists, err := s.rounds.RoundExists(ctx.tournamentID, nextRoundNumber)
 	if err != nil {
-		if err == round.ErrNotFound {
-			http.Error(w, "round not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "could not get round", http.StatusInternalServerError)
+		http.Error(w, "could not check for existing round", http.StatusInternalServerError)
 		return
 	}
-	if pr.TournamentID != tournamentID {
-		http.Error(w, "round not found", http.StatusNotFound)
-		return
-	}
-	if pr.Status != round.StatusClosed {
-		http.Error(w, "round must be closed before computing the next round", http.StatusConflict)
+	if exists {
+		http.Error(w, "the next round has already been created", http.StatusConflict)
 		return
 	}
 
-	tour, err := s.tournaments.Get(tournamentID)
-	if err != nil {
-		http.Error(w, "could not get tournament", http.StatusInternalServerError)
-		return
-	}
-	ttp := s.findTournamentType(tour.TournamentTypeID)
-	if ttp == nil {
-		http.Error(w, "tournament type plugin not found", http.StatusInternalServerError)
-		return
-	}
-
-	groups, err := s.rounds.ListGroups(roundID)
-	if err != nil {
-		http.Error(w, "could not list groups", http.StatusInternalServerError)
-		return
-	}
-	results, err := s.rounds.ListResults(roundID)
-	if err != nil {
-		http.Error(w, "could not list results", http.StatusInternalServerError)
-		return
-	}
-	resultsByTeam := make(map[string]round.Result, len(results))
-	for _, res := range results {
-		resultsByTeam[res.TeamID] = res
-	}
-
-	rankedGroups := make([][]ranking.TeamResult, 0, len(groups))
-	for _, g := range groups {
+	rankedGroups := make([][]ranking.TeamResult, 0, len(ctx.groups))
+	inputTeamIDs := make(map[string]int)
+	for _, g := range ctx.groups {
 		unranked := make([]ranking.TeamResult, 0, len(g.TeamIDs))
 		for _, teamID := range g.TeamIDs {
-			res := resultsByTeam[teamID]
+			res := ctx.resultsByTeam[teamID]
 			unranked = append(unranked, ranking.TeamResult{
 				TeamID:      teamID,
 				TimeSeconds: res.TimeSeconds,
 				Status:      ranking.Status(res.Status),
 			})
+			inputTeamIDs[teamID]++
 		}
 		rankedGroups = append(rankedGroups, ranking.Rank(unranked))
 	}
 
-	nextGroupTeamIDs, err := ttp.NextRoundGroups(rankedGroups)
+	nextGroupTeamIDs, err := ctx.ttp.NextRoundGroups(rankedGroups)
 	if err != nil {
 		http.Error(w, "plugin error computing next round: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	nextPR, nextGroups, err := s.rounds.CreateRound(tournamentID, pr.RoundNumber+1, nextGroupTeamIDs)
+	// The plugin must return exactly the same set of teams it was given
+	// (spec §5's team-conservation invariant) -- verify before persisting
+	// anything, so a buggy or malicious plugin can't silently drop, add,
+	// or duplicate teams in a way nothing downstream would ever check.
+	outputTeamIDs := make(map[string]int)
+	outputCount := 0
+	for _, group := range nextGroupTeamIDs {
+		for _, teamID := range group {
+			outputTeamIDs[teamID]++
+			outputCount++
+		}
+	}
+	inputCount := 0
+	for _, n := range inputTeamIDs {
+		inputCount += n
+	}
+	conserved := outputCount == inputCount
+	if conserved {
+		for teamID, n := range inputTeamIDs {
+			if outputTeamIDs[teamID] != n {
+				conserved = false
+				break
+			}
+		}
+	}
+	if conserved {
+		for teamID := range outputTeamIDs {
+			if _, ok := inputTeamIDs[teamID]; !ok {
+				conserved = false
+				break
+			}
+		}
+	}
+	if !conserved {
+		http.Error(w, "plugin violated team conservation invariant", http.StatusInternalServerError)
+		return
+	}
+
+	nextPR, nextGroups, err := s.rounds.CreateRound(ctx.tournamentID, nextRoundNumber, nextGroupTeamIDs)
 	if err != nil {
 		http.Error(w, "could not create next round", http.StatusInternalServerError)
 		return

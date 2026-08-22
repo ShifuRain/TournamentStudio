@@ -16,21 +16,21 @@ func TestComputeDivisionsSplitsRankedTeams(t *testing.T) {
 	s := newTestServer(t)
 	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
 	tournamentID := createTestTournament(t, s, token)
-	roundID := createTestRound(t, s, token, tournamentID, [][]string{
+	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{
 		{"t1", "t2", "t3", "t4"},
 		{"t5", "t6", "t7", "t8"},
 	})
 
-	resultsBody, _ := json.Marshal(map[string]any{
-		"t1": map[string]any{"time_seconds": 100.0},
-		"t2": map[string]any{"time_seconds": 110.0},
-		"t3": map[string]any{"time_seconds": 200.0},
-		"t4": map[string]any{"time_seconds": 210.0},
-		"t5": map[string]any{"time_seconds": 105.0},
-		"t6": map[string]any{"time_seconds": 115.0},
-		"t7": map[string]any{"time_seconds": 205.0},
-		"t8": map[string]any{"time_seconds": 215.0},
-	})
+	resultsBody, _ := json.Marshal(resultsBodyFor(ids,
+		"t1", map[string]any{"time_seconds": 100.0},
+		"t2", map[string]any{"time_seconds": 110.0},
+		"t3", map[string]any{"time_seconds": 200.0},
+		"t4", map[string]any{"time_seconds": 210.0},
+		"t5", map[string]any{"time_seconds": 105.0},
+		"t6", map[string]any{"time_seconds": 115.0},
+		"t7", map[string]any{"time_seconds": 205.0},
+		"t8", map[string]any{"time_seconds": 215.0},
+	))
 	resultsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/results", tournamentID, roundID), bytes.NewReader(resultsBody))
 	resultsReq.Header.Set("Authorization", "Bearer "+token)
 	resultsRec := httptest.NewRecorder()
@@ -66,8 +66,8 @@ func TestComputeDivisionsSplitsRankedTeams(t *testing.T) {
 	// t1(100), t5(105), t2(110), t6(115), t3(200), t7(205), t4(210), t8(215)
 	// This interleaves the two groups, so a per-group-then-concatenate bug
 	// (Task 10's shape) would produce a different, wrong order.
-	wantGold := []string{"t1", "t5", "t2"}
-	wantFinal := []string{"t6", "t3", "t7", "t4", "t8"}
+	wantGold := mapLabels(ids, "t1", "t5", "t2")
+	wantFinal := mapLabels(ids, "t6", "t3", "t7", "t4", "t8")
 
 	if resp.Divisions[0].Name != "Gold Final" {
 		t.Fatalf("expected first division name %q, got %q", "Gold Final", resp.Divisions[0].Name)
