@@ -249,6 +249,21 @@ func scanHeatRow(row rowScanner) (Heat, error) {
 	return h, nil
 }
 
+func (r *Repo) UpdateHeatPlannedStart(id int64, start time.Time) (*Heat, error) {
+	res, err := r.db.Exec(`UPDATE heats SET planned_start = ? WHERE id = ?`, start.Format(time.RFC3339), id)
+	if err != nil {
+		return nil, err
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if affected == 0 {
+		return nil, ErrHeatNotFound
+	}
+	return r.GetHeat(id)
+}
+
 func (r *Repo) GetHeat(id int64) (*Heat, error) {
 	row := r.db.QueryRow(
 		`SELECT id, round_id, group_id, division_id, course_id, planned_start, status FROM heats WHERE id = ?`,

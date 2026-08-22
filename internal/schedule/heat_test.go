@@ -229,6 +229,28 @@ func TestScheduleDivisionHeatsRejectsUnknownDivision(t *testing.T) {
 	}
 }
 
+func TestUpdateHeatPlannedStart(t *testing.T) {
+	r := newTestRepo(t)
+	heatID := r.mustCreateTestHeat(t)
+
+	newStart := time.Date(2026, 9, 1, 14, 0, 0, 0, time.UTC)
+	updated, err := r.UpdateHeatPlannedStart(heatID, newStart)
+	if err != nil {
+		t.Fatalf("UpdateHeatPlannedStart: %v", err)
+	}
+	if !updated.PlannedStart.Equal(newStart) {
+		t.Fatalf("expected planned_start %v, got %v", newStart, updated.PlannedStart)
+	}
+}
+
+func TestUpdateHeatPlannedStartNotFound(t *testing.T) {
+	r := newTestRepo(t)
+	newStart := time.Date(2026, 9, 1, 14, 0, 0, 0, time.UTC)
+	if _, err := r.UpdateHeatPlannedStart(999, newStart); err != ErrHeatNotFound {
+		t.Fatalf("expected ErrHeatNotFound, got %v", err)
+	}
+}
+
 func TestScheduleDivisionHeatsRejectsDivisionFromAnotherTournament(t *testing.T) {
 	r := newTestRepo(t)
 	tournamentA := seedTournament(t, r)
