@@ -52,16 +52,21 @@ func (s *Server) handleSubmitHeatResults(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if heat.GroupID == nil {
-		// Division-heat results are wired up in Task 7, once divisions
-		// and their heats exist at all.
-		http.Error(w, "division heat results are not yet supported", http.StatusNotImplemented)
-		return
-	}
-	group, err := s.rounds.GetGroup(*heat.GroupID)
-	if err != nil {
-		http.Error(w, "could not get group", http.StatusInternalServerError)
-		return
+	var validTeamIDsSource []string
+	if heat.GroupID != nil {
+		group, err := s.rounds.GetGroup(*heat.GroupID)
+		if err != nil {
+			http.Error(w, "could not get group", http.StatusInternalServerError)
+			return
+		}
+		validTeamIDsSource = group.TeamIDs
+	} else {
+		division, err := s.schedule.GetDivision(*heat.DivisionID)
+		if err != nil {
+			http.Error(w, "could not get division", http.StatusInternalServerError)
+			return
+		}
+		validTeamIDsSource = division.TeamIDs
 	}
 
 	var req submitHeatResultsRequest
@@ -92,8 +97,8 @@ func (s *Server) handleSubmitHeatResults(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	validTeamIDs := make(map[string]bool, len(group.TeamIDs))
-	for _, id := range group.TeamIDs {
+	validTeamIDs := make(map[string]bool, len(validTeamIDsSource))
+	for _, id := range validTeamIDsSource {
 		validTeamIDs[id] = true
 	}
 
@@ -121,22 +126,28 @@ func (s *Server) handleSubmitHeatResults(w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		roundHeats, err := s.schedule.ListHeatsForRound(heat.RoundID)
-		if err != nil {
-			http.Error(w, "could not list round heats", http.StatusInternalServerError)
-			return
-		}
-		roundComplete := true
-		for _, h := range roundHeats {
-			if h.GroupID != nil && h.Status != schedule.HeatClosed {
-				roundComplete = false
-				break
-			}
-		}
-		if roundComplete {
-			if err := s.rounds.SetStatus(heat.RoundID, round.StatusClosed); err != nil {
-				http.Error(w, "could not close round", http.StatusInternalServerError)
+		if heat.GroupID != nil {
+			// Only a round's own group-heats gate that round's closure --
+			// its divisions' heats (added after the round is already
+			// closed, once /divisions has run) must never reopen or
+			// re-trigger this check.
+			roundHeats, err := s.schedule.ListHeatsForRound(heat.RoundID)
+			if err != nil {
+				http.Error(w, "could not list round heats", http.StatusInternalServerError)
 				return
+			}
+			roundComplete := true
+			for _, h := range roundHeats {
+				if h.GroupID != nil && h.Status != schedule.HeatClosed {
+					roundComplete = false
+					break
+				}
+			}
+			if roundComplete {
+				if err := s.rounds.SetStatus(heat.RoundID, round.StatusClosed); err != nil {
+					http.Error(w, "could not close round", http.StatusInternalServerError)
+					return
+				}
 			}
 		}
 	}

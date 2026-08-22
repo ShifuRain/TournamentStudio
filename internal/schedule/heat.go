@@ -8,12 +8,39 @@ import (
 
 var ErrHeatNotFound = errors.New("heat not found")
 var ErrGroupAlreadyScheduled = errors.New("group already has a scheduled heat")
+var ErrDivisionAlreadyScheduled = errors.New("division already has a scheduled heat")
 
 // GroupAssignment pairs a round's group with the course it should race
 // on, for ScheduleGroupHeats.
 type GroupAssignment struct {
 	GroupID  int64
 	CourseID int64
+}
+
+// DivisionAssignment pairs a division with the course it should race
+// on, for ScheduleDivisionHeats.
+type DivisionAssignment struct {
+	DivisionID int64
+	CourseID   int64
+}
+
+// validateCourseForSchedule confirms courseID belongs to tournamentID
+// and returns its HeatIntervalSeconds, or ErrCourseNotFound if either
+// check fails. Shared by ScheduleGroupHeats and ScheduleDivisionHeats.
+func validateCourseForSchedule(tx *sql.Tx, tournamentID, courseID int64) (int, error) {
+	var courseTournamentID int64
+	var intervalSeconds int
+	row := tx.QueryRow(`SELECT tournament_id, heat_interval_seconds FROM courses WHERE id = ?`, courseID)
+	if err := row.Scan(&courseTournamentID, &intervalSeconds); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrCourseNotFound
+		}
+		return 0, err
+	}
+	if courseTournamentID != tournamentID {
+		return 0, ErrCourseNotFound
+	}
+	return intervalSeconds, nil
 }
 
 // ScheduleGroupHeats creates one Heat per assignment, transactionally.
@@ -33,19 +60,10 @@ func (r *Repo) ScheduleGroupHeats(tournamentID, roundID int64, assignments []Gro
 	created := make([]Heat, 0, len(assignments))
 
 	for _, a := range assignments {
-		var courseTournamentID int64
-		var intervalSeconds int
-		row := tx.QueryRow(`SELECT tournament_id, heat_interval_seconds FROM courses WHERE id = ?`, a.CourseID)
-		if err := row.Scan(&courseTournamentID, &intervalSeconds); err != nil {
+		intervalSeconds, err := validateCourseForSchedule(tx, tournamentID, a.CourseID)
+		if err != nil {
 			tx.Rollback()
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil, ErrCourseNotFound
-			}
 			return nil, err
-		}
-		if courseTournamentID != tournamentID {
-			tx.Rollback()
-			return nil, ErrCourseNotFound
 		}
 
 		var existingCount int
@@ -84,6 +102,88 @@ func (r *Repo) ScheduleGroupHeats(tournamentID, roundID int64, assignments []Gro
 		}
 		created = append(created, Heat{
 			ID: heatID, RoundID: roundID, GroupID: &groupID, CourseID: a.CourseID,
+			PlannedStart: start, Status: HeatScheduled,
+		})
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+// ScheduleDivisionHeats creates one Heat per assignment, transactionally,
+// the division-heat counterpart to ScheduleGroupHeats. Every
+// assignment's course must belong to tournamentID and must not already
+// have created a heat for that division; each division's RoundID (the
+// round it was cut from) becomes the created heat's RoundID. Same
+// same-course auto-sequencing rules as ScheduleGroupHeats.
+func (r *Repo) ScheduleDivisionHeats(tournamentID int64, assignments []DivisionAssignment, startAt *time.Time) ([]Heat, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	nextStart := make(map[int64]time.Time)
+	created := make([]Heat, 0, len(assignments))
+
+	for _, a := range assignments {
+		var divTournamentID, divRoundID int64
+		row := tx.QueryRow(`SELECT tournament_id, round_id FROM divisions WHERE id = ?`, a.DivisionID)
+		if err := row.Scan(&divTournamentID, &divRoundID); err != nil {
+			tx.Rollback()
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, ErrDivisionNotFound
+			}
+			return nil, err
+		}
+		if divTournamentID != tournamentID {
+			tx.Rollback()
+			return nil, ErrDivisionNotFound
+		}
+
+		intervalSeconds, err := validateCourseForSchedule(tx, tournamentID, a.CourseID)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+
+		var existingCount int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM heats WHERE division_id = ?`, a.DivisionID).Scan(&existingCount); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		if existingCount > 0 {
+			tx.Rollback()
+			return nil, ErrDivisionAlreadyScheduled
+		}
+
+		start, ok := nextStart[a.CourseID]
+		if !ok {
+			start, err = courseAnchor(tx, a.CourseID, startAt)
+			if err != nil {
+				tx.Rollback()
+				return nil, err
+			}
+		}
+		nextStart[a.CourseID] = start.Add(time.Duration(intervalSeconds) * time.Second)
+
+		divisionID := a.DivisionID
+		res, err := tx.Exec(
+			`INSERT INTO heats (round_id, group_id, division_id, course_id, planned_start, status) VALUES (?, NULL, ?, ?, ?, ?)`,
+			divRoundID, divisionID, a.CourseID, start.Format(time.RFC3339), string(HeatScheduled),
+		)
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		heatID, err := res.LastInsertId()
+		if err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		created = append(created, Heat{
+			ID: heatID, RoundID: divRoundID, DivisionID: &divisionID, CourseID: a.CourseID,
 			PlannedStart: start, Status: HeatScheduled,
 		})
 	}

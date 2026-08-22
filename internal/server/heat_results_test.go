@@ -235,3 +235,78 @@ func TestSubmitHeatResultsBroadcasts(t *testing.T) {
 		t.Fatalf("unexpected broadcast event: %+v", evt)
 	}
 }
+
+func TestSubmitDivisionHeatResultsWorksAndDoesNotReopenRound(t *testing.T) {
+	s := newTestServer(t)
+	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
+	tournamentID := createTestTournament(t, s, token)
+	roundID, ids := createTestRound(t, s, token, tournamentID, [][]string{{"t1", "t2"}})
+	submitHeatResultsForRound(t, s, token, tournamentID, roundID, ids,
+		"t1", map[string]any{"time_seconds": 100.0},
+		"t2", map[string]any{"time_seconds": 110.0},
+	)
+
+	pr, err := s.rounds.GetRound(roundID)
+	if err != nil {
+		t.Fatalf("GetRound: %v", err)
+	}
+	if pr.Status != round.StatusClosed {
+		t.Fatalf("expected round closed before computing divisions, got %s", pr.Status)
+	}
+
+	divisionsBody, _ := json.Marshal(map[string]any{"cuts": []map[string]any{{"name": "Final", "size": 2}}})
+	divisionsReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/rounds/%d/divisions", tournamentID, roundID), bytes.NewReader(divisionsBody))
+	divisionsReq.Header.Set("Authorization", "Bearer "+token)
+	divisionsRec := httptest.NewRecorder()
+	s.ServeHTTP(divisionsRec, divisionsReq)
+	var divisionsResp struct {
+		Divisions []struct {
+			ID int64 `json:"id"`
+		} `json:"divisions"`
+	}
+	if err := json.Unmarshal(divisionsRec.Body.Bytes(), &divisionsResp); err != nil {
+		t.Fatalf("decode divisions: %v", err)
+	}
+
+	courseID := createTestCourse(t, s, token, tournamentID, "Finals Course", 300)
+	scheduleBody, _ := json.Marshal(map[string]any{
+		"assignments": []map[string]any{{"division_id": divisionsResp.Divisions[0].ID, "course_id": courseID}},
+	})
+	scheduleReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/tournaments/%d/divisions/schedule", tournamentID), bytes.NewReader(scheduleBody))
+	scheduleReq.Header.Set("Authorization", "Bearer "+token)
+	scheduleRec := httptest.NewRecorder()
+	s.ServeHTTP(scheduleRec, scheduleReq)
+	var scheduled struct {
+		Heats []struct {
+			ID int64 `json:"id"`
+		} `json:"heats"`
+	}
+	if err := json.Unmarshal(scheduleRec.Body.Bytes(), &scheduled); err != nil {
+		t.Fatalf("decode schedule response: %v", err)
+	}
+	divisionHeatID := scheduled.Heats[0].ID
+
+	rec := submitHeatResults(t, s, token, tournamentID, divisionHeatID, map[string]any{
+		ids["t1"]: map[string]any{"time_seconds": 90.0},
+		ids["t2"]: map[string]any{"time_seconds": 95.0},
+	})
+	if rec.Code != http.StatusOK {
+		t.Fatalf("submit division heat results: expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	h, err := s.schedule.GetHeat(divisionHeatID)
+	if err != nil {
+		t.Fatalf("GetHeat: %v", err)
+	}
+	if h.Status != "closed" {
+		t.Fatalf("expected division heat closed, got %s", h.Status)
+	}
+
+	prAfter, err := s.rounds.GetRound(roundID)
+	if err != nil {
+		t.Fatalf("GetRound: %v", err)
+	}
+	if prAfter.Status != round.StatusClosed {
+		t.Fatalf("expected round to remain closed, got %s", prAfter.Status)
+	}
+}

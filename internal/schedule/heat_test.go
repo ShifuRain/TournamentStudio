@@ -154,3 +154,96 @@ func TestGetHeatNotFound(t *testing.T) {
 		t.Fatalf("expected ErrHeatNotFound, got %v", err)
 	}
 }
+
+func TestScheduleDivisionHeatsAutoSequencesOnSameCourse(t *testing.T) {
+	r := newTestRepo(t)
+	tournamentID := seedTournament(t, r)
+	roundID := seedRound(t, r, tournamentID, 1)
+	course, err := r.CreateCourse(tournamentID, "Course A", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	divisions, err := r.CreateDivisions(tournamentID, roundID, []NewDivision{
+		{Name: "Gold Final", TeamIDs: []string{"t1", "t2"}},
+		{Name: "Final", TeamIDs: []string{"t3", "t4"}},
+	})
+	if err != nil {
+		t.Fatalf("CreateDivisions: %v", err)
+	}
+
+	start := time.Date(2026, 9, 1, 9, 0, 0, 0, time.UTC)
+	heats, err := r.ScheduleDivisionHeats(tournamentID, []DivisionAssignment{
+		{DivisionID: divisions[0].ID, CourseID: course.ID},
+		{DivisionID: divisions[1].ID, CourseID: course.ID},
+	}, &start)
+	if err != nil {
+		t.Fatalf("ScheduleDivisionHeats: %v", err)
+	}
+	if len(heats) != 2 {
+		t.Fatalf("expected 2 heats, got %d", len(heats))
+	}
+	if heats[0].GroupID != nil || *heats[0].DivisionID != divisions[0].ID {
+		t.Fatalf("unexpected heat shape: %+v", heats[0])
+	}
+	if heats[0].RoundID != roundID {
+		t.Fatalf("expected heat's RoundID to come from the division's RoundID, got %d", heats[0].RoundID)
+	}
+	wantSecond := start.Add(300 * time.Second)
+	if !heats[1].PlannedStart.Equal(wantSecond) {
+		t.Fatalf("expected second heat at %v, got %v", wantSecond, heats[1].PlannedStart)
+	}
+}
+
+func TestScheduleDivisionHeatsRejectsAlreadyScheduledDivision(t *testing.T) {
+	r := newTestRepo(t)
+	tournamentID := seedTournament(t, r)
+	roundID := seedRound(t, r, tournamentID, 1)
+	course, err := r.CreateCourse(tournamentID, "Course A", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	divisions, err := r.CreateDivisions(tournamentID, roundID, []NewDivision{{Name: "Final", TeamIDs: []string{"t1"}}})
+	if err != nil {
+		t.Fatalf("CreateDivisions: %v", err)
+	}
+	start := time.Date(2026, 9, 1, 9, 0, 0, 0, time.UTC)
+	if _, err := r.ScheduleDivisionHeats(tournamentID, []DivisionAssignment{{DivisionID: divisions[0].ID, CourseID: course.ID}}, &start); err != nil {
+		t.Fatalf("ScheduleDivisionHeats: %v", err)
+	}
+
+	if _, err := r.ScheduleDivisionHeats(tournamentID, []DivisionAssignment{{DivisionID: divisions[0].ID, CourseID: course.ID}}, &start); err != ErrDivisionAlreadyScheduled {
+		t.Fatalf("expected ErrDivisionAlreadyScheduled, got %v", err)
+	}
+}
+
+func TestScheduleDivisionHeatsRejectsUnknownDivision(t *testing.T) {
+	r := newTestRepo(t)
+	tournamentID := seedTournament(t, r)
+	course, err := r.CreateCourse(tournamentID, "Course A", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	start := time.Date(2026, 9, 1, 9, 0, 0, 0, time.UTC)
+	if _, err := r.ScheduleDivisionHeats(tournamentID, []DivisionAssignment{{DivisionID: 999, CourseID: course.ID}}, &start); err != ErrDivisionNotFound {
+		t.Fatalf("expected ErrDivisionNotFound, got %v", err)
+	}
+}
+
+func TestScheduleDivisionHeatsRejectsDivisionFromAnotherTournament(t *testing.T) {
+	r := newTestRepo(t)
+	tournamentA := seedTournament(t, r)
+	tournamentB := seedTournament(t, r)
+	roundB := seedRound(t, r, tournamentB, 1)
+	course, err := r.CreateCourse(tournamentA, "Course A", 300)
+	if err != nil {
+		t.Fatalf("CreateCourse: %v", err)
+	}
+	divisions, err := r.CreateDivisions(tournamentB, roundB, []NewDivision{{Name: "Final", TeamIDs: []string{"t1"}}})
+	if err != nil {
+		t.Fatalf("CreateDivisions: %v", err)
+	}
+	start := time.Date(2026, 9, 1, 9, 0, 0, 0, time.UTC)
+	if _, err := r.ScheduleDivisionHeats(tournamentA, []DivisionAssignment{{DivisionID: divisions[0].ID, CourseID: course.ID}}, &start); err != ErrDivisionNotFound {
+		t.Fatalf("expected ErrDivisionNotFound for a cross-tournament division, got %v", err)
+	}
+}
