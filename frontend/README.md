@@ -1,32 +1,55 @@
-# React + TypeScript + Vite
+# TournamentStudio web UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This is the React 19 + Vite + TypeScript + Tailwind frontend for
+[TournamentStudio](../README.md) — the setup flow (login, tournament
+list/create/detail, teams list/add/import) and the i18n (en/de) layer
+around it. The Go backend embeds this app's production build via
+`//go:embed` and serves it for every non-`/api` route, so the compiled
+Go binary is a single self-contained executable with no separate
+frontend deployment step at runtime.
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+This starts the Vite dev server with hot module reloading. It expects
+the Go backend to be running separately (see the root
+[README](../README.md)) and proxies API calls to it — check
+`vite.config.ts` for the current dev-server proxy target if you need to
+point it at a non-default backend port.
+
+## Building for the Go binary
+
+```bash
+npm run build
+```
+
+This runs `tsc -b && vite build` and writes the production build to
+`../internal/webui/dist`, which `internal/webui/webui.go` embeds into
+the Go binary at compile time via `//go:embed all:dist`. You must run
+this at least once before `go build` will succeed on a fresh checkout —
+see [Building from source](../README.md#building-from-source) in the
+root README.
+
+## Tests
+
+Unit/component tests (Vitest + Testing Library):
+
+```bash
+npm test
+```
+
+End-to-end tests (Playwright, in `e2e/`):
+
+```bash
+npm run test:e2e
+```
+
+## Linting
+
+```bash
+npm run lint
+```

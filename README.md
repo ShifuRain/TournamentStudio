@@ -28,11 +28,17 @@ endpoints are implemented and tested. There is no bundled web UI yet.
 
 ## Installation
 
-Clone the repository and build the binary:
+Clone the repository and build the binary. The Go binary embeds a built
+copy of the web UI via `//go:embed`, so the frontend must be built once
+*before* any `go build` — see
+[Building from source](#building-from-source) for the full two-step
+process:
 
 ```bash
 git clone https://github.com/ShifuRain/TournamentStudio.git
 cd TournamentStudio
+cd frontend && npm install && npm run build
+cd ..
 go build -o tournamentstudio ./cmd/tournamentstudio
 ```
 
@@ -42,6 +48,37 @@ compile for another OS/architecture the normal Go way, e.g. for Windows:
 ```bash
 GOOS=windows GOARCH=amd64 go build -o tournamentstudio.exe ./cmd/tournamentstudio
 ```
+
+## Building from source
+
+`internal/webui/dist/` is git-ignored and empty on a fresh clone — it is
+populated by building the frontend, and `go build` (or `go test`) fails
+with an unhelpful error until that's done, because
+`internal/webui/webui.go` does a compile-time `//go:embed all:dist` of
+that directory. Always build the frontend first:
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+`npm run build` writes the compiled static assets to
+`internal/webui/dist/`. Once that directory is populated, any Go build
+command works normally:
+
+```bash
+go build -o tournamentstudio ./cmd/tournamentstudio
+# or, for development:
+go build ./...
+go test ./... -count=1
+```
+
+You only need to re-run the frontend build when frontend source changes
+— it's not required again for pure Go changes, as long as `dist/`
+already exists. See [`frontend/README.md`](frontend/README.md) for
+frontend-specific dev/test commands.
 
 ## Starting offline
 
@@ -190,6 +227,9 @@ control), **Time Entry** (can submit race results only), **Spectator**
 | `GET /api/plugins` | any | List loaded sport and tournament-type plugins |
 
 ## Development
+
+The frontend must be built at least once before these commands work —
+see [Building from source](#building-from-source):
 
 ```bash
 go build ./...
