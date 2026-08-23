@@ -46,5 +46,12 @@
   "schedule_courses_offset": "Verzögerung (Sekunden)",
   "schedule_courses_add_submit": "Bahn hinzufügen",
   "schedule_courses_add_error": "Die Bahn konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
-  "schedule_courses_update_error": "Die Bahn konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
+  "schedule_courses_update_error": "Die Bahn konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+  "schedule_round_create_title": "Runde 1 erstellen",
+  "schedule_round_create_group_count": "Anzahl Gruppen",
+  "schedule_round_create_shuffle": "In Gruppen aufteilen",
+  "schedule_round_create_group_label": "Gruppe {{number}}",
+  "schedule_round_create_move_to": "Verschieben nach Gruppe",
+  "schedule_round_create_submit": "Runde 1 erstellen",
+  "schedule_round_create_error": "Die Runde konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
 }

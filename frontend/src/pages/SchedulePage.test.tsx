@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { SchedulePage } from './SchedulePage'
@@ -36,5 +36,52 @@ describe('SchedulePage', () => {
     )
 
     expect(await screen.findByText('schedule_courses_title')).toBeInTheDocument()
+  })
+
+  it('renders the round-create panel only when no round exists yet', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+    vi.mocked(client.api.get).mockImplementation((path: unknown) => {
+      const p = path as string
+      if (p === '/api/tournaments/1/rounds') return Promise.resolve({ rounds: [] })
+      if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/teams') return Promise.resolve([])
+      return Promise.reject(new Error(`unexpected path ${p}`))
+    })
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={['/tournaments/1/schedule']}>
+          <Routes>
+            <Route path="/tournaments/:id/schedule" element={<SchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('schedule_round_create_title')).toBeInTheDocument()
+  })
+
+  it('hides the round-create panel once a round exists', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+    vi.mocked(client.api.get).mockImplementation((path: unknown) => {
+      const p = path as string
+      if (p === '/api/tournaments/1/rounds')
+        return Promise.resolve({ rounds: [{ id: 1, round_number: 1, status: 'open', groups: [], divisions: [] }] })
+      if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      return Promise.reject(new Error(`unexpected path ${p}`))
+    })
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={['/tournaments/1/schedule']}>
+          <Routes>
+            <Route path="/tournaments/:id/schedule" element={<SchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('schedule_courses_title')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('schedule_round_create_title')).not.toBeInTheDocument())
   })
 })

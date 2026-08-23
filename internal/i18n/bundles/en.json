@@ -46,5 +46,12 @@
   "schedule_courses_offset": "Delay offset (seconds)",
   "schedule_courses_add_submit": "Add Course",
   "schedule_courses_add_error": "Could not add the course. Please try again.",
-  "schedule_courses_update_error": "Could not update the course. Please try again."
+  "schedule_courses_update_error": "Could not update the course. Please try again.",
+  "schedule_round_create_title": "Create Round 1",
+  "schedule_round_create_group_count": "Number of groups",
+  "schedule_round_create_shuffle": "Shuffle into groups",
+  "schedule_round_create_group_label": "Group {{number}}",
+  "schedule_round_create_move_to": "Move to group",
+  "schedule_round_create_submit": "Create Round 1",
+  "schedule_round_create_error": "Could not create the round. Please try again."
 }
