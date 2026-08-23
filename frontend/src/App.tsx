@@ -4,12 +4,10 @@ import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { AppShell } from './components/AppShell'
 import { LoginPage } from './pages/LoginPage'
+import { TournamentListPage } from './pages/TournamentListPage'
+import { TournamentCreatePage } from './pages/TournamentCreatePage'
 
 const queryClient = new QueryClient()
-
-function TournamentsPlaceholder() {
-  return <div className="p-8">Tournament list coming soon.</div>
-}
 
 function App() {
   return (
@@ -21,7 +19,8 @@ function App() {
             <Route element={<ProtectedRoute />}>
               <Route element={<AppShell />}>
                 <Route path="/" element={<Navigate to="/tournaments" replace />} />
-                <Route path="/tournaments" element={<TournamentsPlaceholder />} />
+                <Route path="/tournaments" element={<TournamentListPage />} />
+                <Route path="/tournaments/new" element={<TournamentCreatePage />} />
               </Route>
             </Route>
           </Routes>

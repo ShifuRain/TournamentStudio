@@ -9,5 +9,17 @@
   "login_invalid_credentials": "Ungültiger Benutzername oder ungültiges Passwort.",
   "login_generic_error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   "nav_language": "Sprache",
-  "nav_logout": "Abmelden"
+  "nav_logout": "Abmelden",
+  "tournament_list_title": "Turniere",
+  "tournament_create_link": "Turnier erstellen",
+  "loading": "Lädt…",
+  "tournament_create_title": "Turnier erstellen",
+  "tournament_name": "Name",
+  "tournament_language": "Sprache",
+  "tournament_sport": "Sportart",
+  "tournament_select_sport": "Sportart auswählen",
+  "tournament_type": "Turnierart",
+  "tournament_select_type": "Turnierart auswählen",
+  "tournament_create_error": "Das Turnier konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+  "tournament_create_submit": "Erstellen"
 }

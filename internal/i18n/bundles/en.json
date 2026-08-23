@@ -9,5 +9,17 @@
   "login_invalid_credentials": "Invalid username or password.",
   "login_generic_error": "Something went wrong. Please try again.",
   "nav_language": "Language",
-  "nav_logout": "Log out"
+  "nav_logout": "Log out",
+  "tournament_list_title": "Tournaments",
+  "tournament_create_link": "Create Tournament",
+  "loading": "Loading…",
+  "tournament_create_title": "Create Tournament",
+  "tournament_name": "Name",
+  "tournament_language": "Language",
+  "tournament_sport": "Sport",
+  "tournament_select_sport": "Select a sport",
+  "tournament_type": "Tournament Type",
+  "tournament_select_type": "Select a tournament type",
+  "tournament_create_error": "Could not create the tournament. Please try again.",
+  "tournament_create_submit": "Create"
 }
