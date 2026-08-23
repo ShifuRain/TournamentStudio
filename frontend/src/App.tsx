@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './api/queryClient'
 import { AuthProvider } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { AppShell } from './components/AppShell'
@@ -9,8 +10,6 @@ import { TournamentCreatePage } from './pages/TournamentCreatePage'
 import { TournamentDetailPage } from './pages/TournamentDetailPage'
 import { TeamsTab } from './pages/TeamsTab'
 import { TeamImportPage } from './pages/TeamImportPage'
-
-const queryClient = new QueryClient()
 
 function App() {
   return (

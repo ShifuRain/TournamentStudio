@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { api, clearToken, getToken, setToken, setUnauthorizedHandler } from '../api/client'
+import { queryClient } from '../api/queryClient'
 import type { LoginResponse, Role } from '../api/types'
 
 interface AuthState {
@@ -26,6 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(() => {
       localStorage.removeItem(ROLE_KEY)
       setState({ token: null, role: null })
+      queryClient.clear()
     })
   }, [])
 
@@ -43,6 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearToken()
       localStorage.removeItem(ROLE_KEY)
       setState({ token: null, role: null })
+      queryClient.clear()
     }
   }, [])
 
