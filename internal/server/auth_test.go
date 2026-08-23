@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/i18n"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/store"
 )
@@ -91,7 +92,11 @@ func TestRoleDemotionRevokesExistingSessionPrivileges(t *testing.T) {
 		t.Fatalf("load plugins: %v", err)
 	}
 	t.Cleanup(engine.Close)
-	s := New(st, engine)
+	catalog, err := i18n.Load(t.TempDir())
+	if err != nil {
+		t.Fatalf("load i18n: %v", err)
+	}
+	s := New(st, engine, catalog)
 	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
 
 	// Sanity check: the token currently has organizer privileges.

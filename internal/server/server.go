@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/i18n"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/round"
 	"tournamentstudio/internal/schedule"
@@ -23,9 +24,10 @@ type Server struct {
 	rounds      *round.Repo
 	hub         *broadcastHub
 	schedule    *schedule.Repo
+	i18n        *i18n.Catalog
 }
 
-func New(s *store.Store, plugins *plugin.Engine) *Server {
+func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog) *Server {
 	srv := &Server{
 		mux:         http.NewServeMux(),
 		users:       auth.NewRepo(s),
@@ -36,6 +38,7 @@ func New(s *store.Store, plugins *plugin.Engine) *Server {
 		rounds:      round.NewRepo(s),
 		hub:         newBroadcastHub(),
 		schedule:    schedule.NewRepo(s),
+		i18n:        catalog,
 	}
 	srv.routes()
 	return srv
@@ -44,6 +47,7 @@ func New(s *store.Store, plugins *plugin.Engine) *Server {
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("POST /api/login", s.handleLogin)
+	s.mux.HandleFunc("GET /api/i18n/{lang}", s.handleI18n)
 
 	authenticated := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry, auth.RoleSpectator)
 	organizerOnly := s.requireRole(auth.RoleOrganizer)

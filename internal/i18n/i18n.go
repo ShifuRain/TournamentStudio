@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 )
 
 //go:embed bundles/*.json
@@ -98,4 +99,29 @@ func (c *Catalog) Translate(lang, key string) string {
 		}
 	}
 	return key
+}
+
+func (c *Catalog) Languages() []string {
+	langs := make([]string, 0, len(c.strings))
+	for lang := range c.strings {
+		langs = append(langs, lang)
+	}
+	sort.Strings(langs)
+	return langs
+}
+
+// Strings returns lang's full flat key->string map, with English's keys
+// merged underneath first so a partially-translated (or entirely
+// unknown) language never surfaces a raw key -- the same fallback
+// Translate already applies per-key, just returning the whole map at
+// once for the frontend's translation layer.
+func (c *Catalog) Strings(lang string) map[string]string {
+	merged := make(map[string]string, len(c.strings["en"]))
+	for k, v := range c.strings["en"] {
+		merged[k] = v
+	}
+	for k, v := range c.strings[lang] {
+		merged[k] = v
+	}
+	return merged
 }

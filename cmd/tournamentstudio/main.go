@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"tournamentstudio/internal/auth"
+	"tournamentstudio/internal/i18n"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/server"
 	"tournamentstudio/internal/store"
@@ -39,7 +40,16 @@ func main() {
 	}
 	defer engine.Close()
 
-	s := server.New(st, engine)
+	languagesDir := os.Getenv("TOURNAMENTSTUDIO_LANGUAGES")
+	if languagesDir == "" {
+		languagesDir = "languages"
+	}
+	catalog, err := i18n.Load(languagesDir)
+	if err != nil {
+		log.Fatalf("load i18n: %v", err)
+	}
+
+	s := server.New(st, engine, catalog)
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, s); err != nil {

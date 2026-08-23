@@ -130,3 +130,49 @@ func contains(s, substr string) bool {
 	}
 	return false
 }
+
+func TestLanguages(t *testing.T) {
+	c, err := Load("")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	langs := c.Languages()
+	if len(langs) != 2 {
+		t.Fatalf("expected 2 built-in languages (en, de), got %d: %v", len(langs), langs)
+	}
+}
+
+// TestStringsMergesEnglishUnderneath uses an external partial-language
+// drop-in (rather than the built-in "de" bundle, which happens to define
+// every key and so can't exercise the fallback path) to prove that a key
+// the language doesn't override still surfaces its English value.
+func TestStringsMergesEnglishUnderneath(t *testing.T) {
+	dir := t.TempDir()
+	esFile := filepath.Join(dir, "es.json")
+	if err := os.WriteFile(esFile, []byte(`{"next_heat": "SIGUIENTE"}`), 0o644); err != nil {
+		t.Fatalf("write es.json: %v", err)
+	}
+
+	c, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	es := c.Strings("es")
+	if es["next_heat"] != "SIGUIENTE" {
+		t.Fatalf("expected Spanish next_heat, got %q", es["next_heat"])
+	}
+	if es["on_time"] != "ON TIME" {
+		t.Fatalf("expected English fallback for a key es.json doesn't override, got %q", es["on_time"])
+	}
+}
+
+func TestStringsUnknownLanguageReturnsEnglish(t *testing.T) {
+	c, err := Load("")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	fr := c.Strings("fr")
+	if fr["next_heat"] != "NEXT" {
+		t.Fatalf("expected pure English fallback for an unknown language, got %q", fr["next_heat"])
+	}
+}

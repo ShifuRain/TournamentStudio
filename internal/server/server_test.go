@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"tournamentstudio/internal/i18n"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/store"
 )
@@ -24,7 +25,12 @@ func newTestServer(t *testing.T) *Server {
 	}
 	t.Cleanup(engine.Close)
 
-	return New(s, engine)
+	catalog, err := i18n.Load(t.TempDir())
+	if err != nil {
+		t.Fatalf("load i18n: %v", err)
+	}
+
+	return New(s, engine, catalog)
 }
 
 func TestHealthz(t *testing.T) {
