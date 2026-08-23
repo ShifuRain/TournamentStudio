@@ -7,5 +7,7 @@
   "login_password": "Password",
   "login_submit": "Sign In",
   "login_invalid_credentials": "Invalid username or password.",
-  "login_generic_error": "Something went wrong. Please try again."
+  "login_generic_error": "Something went wrong. Please try again.",
+  "nav_language": "Language",
+  "nav_logout": "Log out"
 }
