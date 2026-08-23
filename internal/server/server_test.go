@@ -1,17 +1,24 @@
 package server
 
 import (
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 
 	"tournamentstudio/internal/i18n"
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/store"
 )
 
-func newTestServer(t *testing.T) *Server {
+// newTestServerWithWebFS is newTestServer's shape, but with an explicit
+// webFS -- used by webui_test.go, which needs to control exactly what
+// files "exist" to test the SPA-fallback behavior. newTestServer itself
+// uses a trivial single-file fstest.MapFS, since no other test in this
+// package cares about the embedded frontend's actual content.
+func newTestServerWithWebFS(t *testing.T, webFS fs.FS) *Server {
 	t.Helper()
 	s, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -30,7 +37,14 @@ func newTestServer(t *testing.T) *Server {
 		t.Fatalf("load i18n: %v", err)
 	}
 
-	return New(s, engine, catalog)
+	return New(s, engine, catalog, webFS)
+}
+
+func newTestServer(t *testing.T) *Server {
+	t.Helper()
+	return newTestServerWithWebFS(t, fstest.MapFS{
+		"index.html": &fstest.MapFile{Data: []byte("<html></html>")},
+	})
 }
 
 func TestHealthz(t *testing.T) {

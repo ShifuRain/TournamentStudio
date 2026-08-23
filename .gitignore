@@ -1,2 +1,4 @@
 /tournamentstudio
 *.db
+/internal/webui/dist
+/frontend/node_modules

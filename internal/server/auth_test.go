@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
+	"testing/fstest"
 
 	"tournamentstudio/internal/auth"
 	"tournamentstudio/internal/i18n"
@@ -96,7 +97,7 @@ func TestRoleDemotionRevokesExistingSessionPrivileges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load i18n: %v", err)
 	}
-	s := New(st, engine, catalog)
+	s := New(st, engine, catalog, fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<html></html>")}})
 	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
 
 	// Sanity check: the token currently has organizer privileges.

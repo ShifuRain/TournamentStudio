@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
 
 	"tournamentstudio/internal/auth"
@@ -25,9 +26,10 @@ type Server struct {
 	hub         *broadcastHub
 	schedule    *schedule.Repo
 	i18n        *i18n.Catalog
+	webFS       fs.FS
 }
 
-func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog) *Server {
+func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog, webFS fs.FS) *Server {
 	srv := &Server{
 		mux:         http.NewServeMux(),
 		users:       auth.NewRepo(s),
@@ -39,6 +41,7 @@ func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog) *Server 
 		hub:         newBroadcastHub(),
 		schedule:    schedule.NewRepo(s),
 		i18n:        catalog,
+		webFS:       webFS,
 	}
 	srv.routes()
 	return srv
@@ -74,6 +77,8 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/divisions/schedule", organizerOnly(http.HandlerFunc(s.handleScheduleDivisions)))
 	s.mux.Handle("PATCH /api/tournaments/{id}/heats/{heat_id}", organizerOnly(http.HandlerFunc(s.handleUpdateHeat)))
 	s.mux.Handle("GET /api/tournaments/{id}/schedule", authenticated(http.HandlerFunc(s.handleGetSchedule)))
+
+	s.mux.Handle("/", s.webUIHandler())
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

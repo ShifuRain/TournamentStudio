@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"tournamentstudio/internal/plugin"
 	"tournamentstudio/internal/server"
 	"tournamentstudio/internal/store"
+	"tournamentstudio/internal/webui"
 )
 
 func main() {
@@ -49,7 +51,12 @@ func main() {
 		log.Fatalf("load i18n: %v", err)
 	}
 
-	s := server.New(st, engine, catalog)
+	frontendFS, err := fs.Sub(webui.DistFS, "dist")
+	if err != nil {
+		log.Fatalf("prepare embedded frontend: %v", err)
+	}
+
+	s := server.New(st, engine, catalog, frontendFS)
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, s); err != nil {
