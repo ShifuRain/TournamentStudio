@@ -84,4 +84,35 @@ describe('TeamsTab', () => {
       }),
     )
   })
+
+  it('shows an error message when adding a team fails', async () => {
+    vi.mocked(client.api.get).mockImplementation((path: unknown) => {
+      const p = path as string
+      if (p === '/api/tournaments/1') {
+        return Promise.resolve({
+          id: 1,
+          name: 'T',
+          sport_plugin_id: 'dragonboat',
+          tournament_type_id: 'timed-heats-reseeding',
+          language: 'en',
+          status: 'draft',
+        })
+      }
+      if (p === '/api/tournaments/1/teams') {
+        return Promise.resolve([])
+      }
+      if (p === '/api/plugins') {
+        return Promise.resolve({ sports: [], tournament_types: [] })
+      }
+      return Promise.reject(new Error(`unexpected path ${p}`))
+    })
+    vi.mocked(client.api.post).mockRejectedValue(new Error('server error'))
+
+    renderTab()
+
+    await userEvent.type(await screen.findByLabelText('teams_name'), 'New Team')
+    await userEvent.click(screen.getByText('teams_add_submit'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('teams_add_error')
+  })
 })

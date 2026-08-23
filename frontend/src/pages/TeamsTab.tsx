@@ -104,6 +104,11 @@ export function TeamsTab() {
             />
           </div>
         ))}
+        {createMutation.isError && (
+          <p role="alert" className="text-sm text-red-600">
+            {t('teams_add_error')}
+          </p>
+        )}
         <button
           type="submit"
           disabled={createMutation.isPending}

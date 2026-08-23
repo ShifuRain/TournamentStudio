@@ -32,6 +32,7 @@
   "teams_name": "Name",
   "teams_club": "Club",
   "teams_add_submit": "Add Team",
+  "teams_add_error": "Could not add the team. Please try again.",
   "import_title": "Import Teams",
   "import_file_label": "Choose a CSV or XLSX file",
   "import_submit": "Upload",
