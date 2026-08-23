@@ -25,5 +25,11 @@
   "tab_teams": "Teams",
   "tab_schedule": "Rounds & Schedule",
   "tab_standings": "Live Standings",
-  "tab_coming_soon": "Coming soon"
+  "tab_coming_soon": "Coming soon",
+  "teams_title": "Teams",
+  "teams_import_link": "Import from file",
+  "teams_add_title": "Add a team",
+  "teams_name": "Name",
+  "teams_club": "Club",
+  "teams_add_submit": "Add Team"
 }

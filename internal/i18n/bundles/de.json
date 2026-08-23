@@ -25,5 +25,11 @@
   "tab_teams": "Teams",
   "tab_schedule": "Runden & Zeitplan",
   "tab_standings": "Live-Ergebnisse",
-  "tab_coming_soon": "Demnächst verfügbar"
+  "tab_coming_soon": "Demnächst verfügbar",
+  "teams_title": "Teams",
+  "teams_import_link": "Aus Datei importieren",
+  "teams_add_title": "Team hinzufügen",
+  "teams_name": "Name",
+  "teams_club": "Verein",
+  "teams_add_submit": "Team hinzufügen"
 }

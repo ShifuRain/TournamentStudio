@@ -7,12 +7,9 @@ import { LoginPage } from './pages/LoginPage'
 import { TournamentListPage } from './pages/TournamentListPage'
 import { TournamentCreatePage } from './pages/TournamentCreatePage'
 import { TournamentDetailPage } from './pages/TournamentDetailPage'
+import { TeamsTab } from './pages/TeamsTab'
 
 const queryClient = new QueryClient()
-
-function TeamsTabPlaceholder() {
-  return <div className="p-4 text-gray-500">Team management coming soon.</div>
-}
 
 function App() {
   return (
@@ -28,7 +25,7 @@ function App() {
                 <Route path="/tournaments/new" element={<TournamentCreatePage />} />
                 <Route path="/tournaments/:id" element={<TournamentDetailPage />}>
                   <Route index element={<Navigate to="teams" replace />} />
-                  <Route path="teams" element={<TeamsTabPlaceholder />} />
+                  <Route path="teams" element={<TeamsTab />} />
                 </Route>
               </Route>
             </Route>
