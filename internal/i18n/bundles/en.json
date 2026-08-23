@@ -70,5 +70,15 @@
   "schedule_heats_results_status": "Status",
   "schedule_heats_results_status_finished": "Finished",
   "schedule_heats_results_submit": "Submit Results",
-  "schedule_heats_results_error": "Could not submit results. Please try again."
+  "schedule_heats_results_error": "Could not submit results. Please try again.",
+  "schedule_round_actions_next": "Create Next Round",
+  "schedule_round_actions_next_error": "Could not create the next round. Please try again.",
+  "schedule_round_actions_divisions_title": "Cut into Divisions",
+  "schedule_round_actions_divisions_name": "Division name",
+  "schedule_round_actions_divisions_size": "Size",
+  "schedule_round_actions_divisions_add_cut": "Add division",
+  "schedule_round_actions_divisions_submit": "Cut Divisions",
+  "schedule_round_actions_divisions_error": "Could not cut divisions. Please try again.",
+  "schedule_round_history_title": "Round history",
+  "schedule_round_history_entry": "Round {{number}} — {{status}}"
 }

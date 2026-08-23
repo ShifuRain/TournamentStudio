@@ -70,5 +70,15 @@
   "schedule_heats_results_status": "Status",
   "schedule_heats_results_status_finished": "Beendet",
   "schedule_heats_results_submit": "Ergebnisse übermitteln",
-  "schedule_heats_results_error": "Ergebnisse konnten nicht übermittelt werden. Bitte versuchen Sie es erneut."
+  "schedule_heats_results_error": "Ergebnisse konnten nicht übermittelt werden. Bitte versuchen Sie es erneut.",
+  "schedule_round_actions_next": "Nächste Runde erstellen",
+  "schedule_round_actions_next_error": "Die nächste Runde konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+  "schedule_round_actions_divisions_title": "In Divisionen einteilen",
+  "schedule_round_actions_divisions_name": "Name der Division",
+  "schedule_round_actions_divisions_size": "Größe",
+  "schedule_round_actions_divisions_add_cut": "Division hinzufügen",
+  "schedule_round_actions_divisions_submit": "Divisionen einteilen",
+  "schedule_round_actions_divisions_error": "Divisionen konnten nicht eingeteilt werden. Bitte versuchen Sie es erneut.",
+  "schedule_round_history_title": "Rundenverlauf",
+  "schedule_round_history_entry": "Runde {{number}} — {{status}}"
 }

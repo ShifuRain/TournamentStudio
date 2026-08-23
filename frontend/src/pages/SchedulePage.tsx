@@ -6,6 +6,7 @@ import { ScheduleCourses } from './ScheduleCourses'
 import { ScheduleRoundCreate } from './ScheduleRoundCreate'
 import { ScheduleAssignments } from './ScheduleAssignments'
 import { ScheduleHeats } from './ScheduleHeats'
+import { ScheduleRoundActions } from './ScheduleRoundActions'
 
 export function SchedulePage() {
   const { id } = useParams<{ id: string }>()
@@ -58,6 +59,7 @@ export function SchedulePage() {
       {currentRound && (
         <ScheduleHeats heats={currentRoundHeats} courses={courses} currentRound={currentRound} />
       )}
+      {currentRound && <ScheduleRoundActions currentRound={currentRound} allRounds={rounds} />}
     </div>
   )
 }
