@@ -31,4 +31,55 @@ describe('i18n', () => {
     expect(localStorage.getItem('ts_language')).toBe('de')
     expect(i18n.t('greeting')).toBe('Hallo')
   })
+
+  it('AVAILABLE_LANGUAGES starts out as the hardcoded fallback', async () => {
+    const { AVAILABLE_LANGUAGES } = await import('./i18n')
+    expect(AVAILABLE_LANGUAGES).toEqual(['en', 'de'])
+  })
+
+  it('refreshAvailableLanguages fetches languages from GET /api/i18n and updates AVAILABLE_LANGUAGES in place', async () => {
+    const { AVAILABLE_LANGUAGES, refreshAvailableLanguages } = await import('./i18n')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/i18n') {
+          return new Response(JSON.stringify({ languages: ['en', 'de', 'fr'] }), { status: 200 })
+        }
+        return new Response(JSON.stringify({ greeting: 'Hello' }), { status: 200 })
+      }),
+    )
+
+    await refreshAvailableLanguages()
+
+    expect(AVAILABLE_LANGUAGES).toEqual(['en', 'de', 'fr'])
+  })
+
+  it('refreshAvailableLanguages keeps the hardcoded fallback if the request fails', async () => {
+    const { AVAILABLE_LANGUAGES, refreshAvailableLanguages } = await import('./i18n')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('', { status: 500 })),
+    )
+
+    await refreshAvailableLanguages()
+
+    expect(AVAILABLE_LANGUAGES).toEqual(['en', 'de'])
+  })
+
+  it('refreshAvailableLanguages keeps the hardcoded fallback if fetch throws', async () => {
+    const { AVAILABLE_LANGUAGES, refreshAvailableLanguages } = await import('./i18n')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('network error')
+      }),
+    )
+
+    await refreshAvailableLanguages()
+
+    expect(AVAILABLE_LANGUAGES).toEqual(['en', 'de'])
+  })
 })

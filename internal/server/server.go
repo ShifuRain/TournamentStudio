@@ -50,6 +50,7 @@ func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog, webFS fs
 func (s *Server) routes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 	s.mux.HandleFunc("POST /api/login", s.handleLogin)
+	s.mux.HandleFunc("GET /api/i18n", s.handleI18nLanguages)
 	s.mux.HandleFunc("GET /api/i18n/{lang}", s.handleI18n)
 
 	authenticated := s.requireRole(auth.RoleOrganizer, auth.RoleTimeEntry, auth.RoleSpectator)
