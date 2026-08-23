@@ -53,5 +53,11 @@
   "schedule_round_create_group_label": "Gruppe {{number}}",
   "schedule_round_create_move_to": "Verschieben nach Gruppe",
   "schedule_round_create_submit": "Runde 1 erstellen",
-  "schedule_round_create_error": "Die Runde konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+  "schedule_round_create_error": "Die Runde konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+  "schedule_assignments_group_title": "Gruppen dieser Runde einteilen",
+  "schedule_assignments_division_title": "Divisionen einteilen",
+  "schedule_assignments_course_label": "Bahn",
+  "schedule_assignments_select_course": "Bahn auswählen",
+  "schedule_assignments_submit": "Einteilen",
+  "schedule_assignments_error": "Einteilung fehlgeschlagen. Bitte versuchen Sie es erneut."
 }

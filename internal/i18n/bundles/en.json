@@ -53,5 +53,11 @@
   "schedule_round_create_group_label": "Group {{number}}",
   "schedule_round_create_move_to": "Move to group",
   "schedule_round_create_submit": "Create Round 1",
-  "schedule_round_create_error": "Could not create the round. Please try again."
+  "schedule_round_create_error": "Could not create the round. Please try again.",
+  "schedule_assignments_group_title": "Schedule this round's groups",
+  "schedule_assignments_division_title": "Schedule divisions",
+  "schedule_assignments_course_label": "Course",
+  "schedule_assignments_select_course": "Select a course",
+  "schedule_assignments_submit": "Schedule",
+  "schedule_assignments_error": "Could not schedule. Please try again."
 }

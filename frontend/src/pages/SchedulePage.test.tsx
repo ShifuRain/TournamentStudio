@@ -22,6 +22,7 @@ describe('SchedulePage', () => {
       const p = path as string
       if (p === '/api/tournaments/1/rounds') return Promise.resolve({ rounds: [] })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })
 
@@ -45,6 +46,7 @@ describe('SchedulePage', () => {
       if (p === '/api/tournaments/1/rounds') return Promise.resolve({ rounds: [] })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
       if (p === '/api/tournaments/1/teams') return Promise.resolve([])
+      if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })
 
@@ -68,6 +70,7 @@ describe('SchedulePage', () => {
       if (p === '/api/tournaments/1/rounds')
         return Promise.resolve({ rounds: [{ id: 1, round_number: 1, status: 'open', groups: [], divisions: [] }] })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })
 
@@ -83,5 +86,39 @@ describe('SchedulePage', () => {
 
     expect(await screen.findByText('schedule_courses_title')).toBeInTheDocument()
     await waitFor(() => expect(screen.queryByText('schedule_round_create_title')).not.toBeInTheDocument())
+  })
+
+  it('renders the group-scheduling panel for a round with unscheduled groups', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+    vi.mocked(client.api.get).mockImplementation((path: unknown) => {
+      const p = path as string
+      if (p === '/api/tournaments/1/rounds')
+        return Promise.resolve({
+          rounds: [
+            {
+              id: 1,
+              round_number: 1,
+              status: 'open',
+              groups: [{ id: 10, team_ids: ['1', '2'] }],
+              divisions: [],
+            },
+          ],
+        })
+      if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
+      return Promise.reject(new Error(`unexpected path ${p}`))
+    })
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={['/tournaments/1/schedule']}>
+          <Routes>
+            <Route path="/tournaments/:id/schedule" element={<SchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(await screen.findByText('schedule_assignments_group_title')).toBeInTheDocument()
   })
 })

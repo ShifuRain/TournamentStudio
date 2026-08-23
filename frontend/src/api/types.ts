@@ -81,3 +81,22 @@ export interface Round {
   groups: Group[]
   divisions: DivisionInfo[]
 }
+
+export interface HeatResult {
+  heat_id: number
+  team_id: string
+  time_seconds: number | null
+  status: string
+}
+
+export interface Heat {
+  id: number
+  round_id: number
+  group_id: number | null
+  division_id: number | null
+  course_id: number
+  planned_start: string
+  effective_start: string
+  status: string
+  results: HeatResult[]
+}
