@@ -35,6 +35,6 @@ test('login, create a tournament, add a team, and import a CSV with one bad row'
   await page.getByLabel('Choose a CSV or XLSX file').setInputFiles(fixturePath)
   await page.getByRole('button', { name: 'Upload' }).click()
 
-  await expect(page.getByText(/1 team\(s\) imported\./)).toBeVisible()
+  await expect(page.getByText(/4 team\(s\) imported\./)).toBeVisible()
   await expect(page.getByText(/Row 1: missing team name/)).toBeVisible()
 })
