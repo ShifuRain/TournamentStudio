@@ -24,7 +24,12 @@ func TestGetPluginsListsBundledPlugins(t *testing.T) {
 
 	var resp struct {
 		Sports []struct {
-			ID string `json:"id"`
+			ID           string `json:"id"`
+			RosterFields []struct {
+				Key      string `json:"key"`
+				Label    string `json:"label"`
+				Required bool   `json:"required"`
+			} `json:"roster_fields"`
 		} `json:"sports"`
 		TournamentTypes []struct {
 			ID string `json:"id"`
@@ -38,6 +43,12 @@ func TestGetPluginsListsBundledPlugins(t *testing.T) {
 	for _, sp := range resp.Sports {
 		if sp.ID == "dragonboat" {
 			foundSport = true
+			if len(sp.RosterFields) != 1 {
+				t.Fatalf("expected 1 roster field, got %d", len(sp.RosterFields))
+			}
+			if sp.RosterFields[0].Key != "boat_class" || sp.RosterFields[0].Label != "Boat class" || sp.RosterFields[0].Required != false {
+				t.Fatalf("unexpected roster field: %+v", sp.RosterFields[0])
+			}
 		}
 	}
 	if !foundSport {

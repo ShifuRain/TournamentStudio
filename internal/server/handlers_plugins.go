@@ -3,12 +3,15 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+
+	"tournamentstudio/internal/plugin"
 )
 
 type pluginSportResponse struct {
-	ID                        string   `json:"id"`
-	DisplayName               string   `json:"display_name"`
-	CompatibleTournamentTypes []string `json:"compatible_tournament_types"`
+	ID                        string                `json:"id"`
+	DisplayName               string                `json:"display_name"`
+	CompatibleTournamentTypes []string              `json:"compatible_tournament_types"`
+	RosterFields              []plugin.RosterField  `json:"roster_fields"`
 }
 
 type pluginTournamentTypeResponse struct {
@@ -23,6 +26,7 @@ func (s *Server) handlePlugins(w http.ResponseWriter, r *http.Request) {
 			ID:                        sp.ID,
 			DisplayName:               sp.DisplayName,
 			CompatibleTournamentTypes: sp.CompatibleTournamentTypes,
+			RosterFields:              sp.RosterFields,
 		})
 	}
 

@@ -7,9 +7,9 @@ import (
 )
 
 type RosterField struct {
-	Key      string
-	Label    string
-	Required bool
+	Key      string `json:"key"`
+	Label    string `json:"label"`
+	Required bool   `json:"required"`
 }
 
 type SportPlugin struct {
