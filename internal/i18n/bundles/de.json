@@ -1,5 +1,11 @@
 {
   "next_heat": "NÄCHSTER",
   "on_time": "PÜNKTLICH",
-  "submit_heat": "Lauf einreichen"
+  "submit_heat": "Lauf einreichen",
+  "login_title": "Anmelden",
+  "login_username": "Benutzername",
+  "login_password": "Passwort",
+  "login_submit": "Anmelden",
+  "login_invalid_credentials": "Ungültiger Benutzername oder ungültiges Passwort.",
+  "login_generic_error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut."
 }

@@ -1,5 +1,11 @@
 {
   "next_heat": "NEXT",
   "on_time": "ON TIME",
-  "submit_heat": "Submit Heat"
+  "submit_heat": "Submit Heat",
+  "login_title": "Sign In",
+  "login_username": "Username",
+  "login_password": "Password",
+  "login_submit": "Sign In",
+  "login_invalid_credentials": "Invalid username or password.",
+  "login_generic_error": "Something went wrong. Please try again."
 }
