@@ -78,6 +78,15 @@ func (s *Server) routes() {
 	s.mux.Handle("PATCH /api/tournaments/{id}/heats/{heat_id}", organizerOnly(http.HandlerFunc(s.handleUpdateHeat)))
 	s.mux.Handle("GET /api/tournaments/{id}/schedule", authenticated(http.HandlerFunc(s.handleGetSchedule)))
 
+	// Unmatched /api/... paths must 404 (and wrong-method requests to a
+	// real endpoint must 405), not fall through to the SPA catch-all
+	// below. Go's ServeMux prefers the most specific registered pattern,
+	// so this doesn't shadow the specific /api/... registrations above
+	// regardless of registration order -- it only catches what nothing
+	// else matched. See apiNotFoundHandler for why a plain
+	// http.NotFoundHandler() isn't enough to also get 405s right.
+	s.mux.Handle(apiCatchAllPattern, s.apiNotFoundHandler())
+
 	s.mux.Handle("/", s.webUIHandler())
 }
 
