@@ -31,5 +31,12 @@
   "teams_add_title": "Team hinzufügen",
   "teams_name": "Name",
   "teams_club": "Verein",
-  "teams_add_submit": "Team hinzufügen"
+  "teams_add_submit": "Team hinzufügen",
+  "import_title": "Teams importieren",
+  "import_file_label": "CSV- oder XLSX-Datei auswählen",
+  "import_submit": "Hochladen",
+  "import_error": "Die Datei konnte nicht importiert werden. Bitte versuchen Sie es erneut.",
+  "import_result_summary": "{{count}} Team(s) importiert.",
+  "import_row_problem": "Zeile {{row}}: {{message}}",
+  "import_back_link": "Zurück zu Teams"
 }

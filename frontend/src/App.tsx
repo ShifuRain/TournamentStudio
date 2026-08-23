@@ -8,6 +8,7 @@ import { TournamentListPage } from './pages/TournamentListPage'
 import { TournamentCreatePage } from './pages/TournamentCreatePage'
 import { TournamentDetailPage } from './pages/TournamentDetailPage'
 import { TeamsTab } from './pages/TeamsTab'
+import { TeamImportPage } from './pages/TeamImportPage'
 
 const queryClient = new QueryClient()
 
@@ -26,6 +27,7 @@ function App() {
                 <Route path="/tournaments/:id" element={<TournamentDetailPage />}>
                   <Route index element={<Navigate to="teams" replace />} />
                   <Route path="teams" element={<TeamsTab />} />
+                  <Route path="teams/import" element={<TeamImportPage />} />
                 </Route>
               </Route>
             </Route>
