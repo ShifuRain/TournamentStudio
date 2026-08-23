@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"tournamentstudio/internal/round"
+	"tournamentstudio/internal/schedule"
 	"tournamentstudio/internal/tournament"
 )
 
@@ -20,22 +21,28 @@ type groupResponse struct {
 }
 
 type roundResponse struct {
-	ID          int64           `json:"id"`
-	RoundNumber int             `json:"round_number"`
-	Status      string          `json:"status"`
-	Groups      []groupResponse `json:"groups"`
+	ID          int64              `json:"id"`
+	RoundNumber int                `json:"round_number"`
+	Status      string             `json:"status"`
+	Groups      []groupResponse    `json:"groups"`
+	Divisions   []divisionResponse `json:"divisions"`
 }
 
-func roundToResponse(pr *round.PrePhaseRound, groups []round.Group) roundResponse {
+func roundToResponse(pr *round.PrePhaseRound, groups []round.Group, divisions []schedule.Division) roundResponse {
 	gr := make([]groupResponse, 0, len(groups))
 	for _, g := range groups {
 		gr = append(gr, groupResponse{ID: g.ID, TeamIDs: g.TeamIDs})
+	}
+	dr := make([]divisionResponse, 0, len(divisions))
+	for _, d := range divisions {
+		dr = append(dr, divisionResponse{ID: d.ID, Name: d.Name, TeamIDs: d.TeamIDs})
 	}
 	return roundResponse{
 		ID:          pr.ID,
 		RoundNumber: pr.RoundNumber,
 		Status:      string(pr.Status),
 		Groups:      gr,
+		Divisions:   dr,
 	}
 }
 
@@ -97,5 +104,38 @@ func (s *Server) handleCreateRound(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(roundToResponse(pr, groups))
+	json.NewEncoder(w).Encode(roundToResponse(pr, groups, nil))
+}
+
+func (s *Server) handleListRounds(w http.ResponseWriter, r *http.Request) {
+	tournamentID, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
+	if err != nil {
+		http.Error(w, "invalid tournament id", http.StatusBadRequest)
+		return
+	}
+
+	rounds, err := s.rounds.ListRounds(tournamentID)
+	if err != nil {
+		http.Error(w, "could not list rounds", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]roundResponse, 0, len(rounds))
+	for i := range rounds {
+		pr := &rounds[i]
+		groups, err := s.rounds.ListGroups(pr.ID)
+		if err != nil {
+			http.Error(w, "could not list groups", http.StatusInternalServerError)
+			return
+		}
+		divisions, err := s.schedule.ListDivisionsForRound(pr.ID)
+		if err != nil {
+			http.Error(w, "could not list divisions", http.StatusInternalServerError)
+			return
+		}
+		resp = append(resp, roundToResponse(pr, groups, divisions))
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"rounds": resp})
 }

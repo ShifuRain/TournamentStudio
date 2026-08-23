@@ -91,6 +91,33 @@ func (r *Repo) RoundExists(tournamentID int64, roundNumber int) (bool, error) {
 	return count > 0, nil
 }
 
+// ListRounds returns every round for the tournament, ordered by round
+// number, for callers that need to discover a tournament's round
+// history rather than already knowing a specific round ID (e.g. the web
+// UI's Schedule screen after a page refresh, or in a fresh browser tab).
+func (r *Repo) ListRounds(tournamentID int64) ([]PrePhaseRound, error) {
+	rows, err := r.db.Query(
+		`SELECT id, tournament_id, round_number, status FROM pre_phase_rounds WHERE tournament_id = ? ORDER BY round_number`,
+		tournamentID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rounds []PrePhaseRound
+	for rows.Next() {
+		var pr PrePhaseRound
+		var status string
+		if err := rows.Scan(&pr.ID, &pr.TournamentID, &pr.RoundNumber, &status); err != nil {
+			return nil, err
+		}
+		pr.Status = Status(status)
+		rounds = append(rounds, pr)
+	}
+	return rounds, rows.Err()
+}
+
 func (r *Repo) GetRound(id int64) (*PrePhaseRound, error) {
 	row := r.db.QueryRow(`SELECT id, tournament_id, round_number, status FROM pre_phase_rounds WHERE id = ?`, id)
 	var pr PrePhaseRound

@@ -118,3 +118,41 @@ func TestGetGroup(t *testing.T) {
 		t.Fatalf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestListRoundsOrdersByRoundNumber(t *testing.T) {
+	s := newTestStore(t)
+	tournamentID := seedTournament(t, s)
+	repo := NewRepo(s)
+
+	if _, _, err := repo.CreateRound(tournamentID, 2, [][]string{{"t3", "t4"}}); err != nil {
+		t.Fatalf("CreateRound 2: %v", err)
+	}
+	if _, _, err := repo.CreateRound(tournamentID, 1, [][]string{{"t1", "t2"}}); err != nil {
+		t.Fatalf("CreateRound 1: %v", err)
+	}
+
+	rounds, err := repo.ListRounds(tournamentID)
+	if err != nil {
+		t.Fatalf("ListRounds: %v", err)
+	}
+	if len(rounds) != 2 {
+		t.Fatalf("expected 2 rounds, got %d", len(rounds))
+	}
+	if rounds[0].RoundNumber != 1 || rounds[1].RoundNumber != 2 {
+		t.Fatalf("expected rounds ordered 1, 2 regardless of creation order; got %d, %d", rounds[0].RoundNumber, rounds[1].RoundNumber)
+	}
+}
+
+func TestListRoundsEmptyForTournamentWithNoRounds(t *testing.T) {
+	s := newTestStore(t)
+	tournamentID := seedTournament(t, s)
+	repo := NewRepo(s)
+
+	rounds, err := repo.ListRounds(tournamentID)
+	if err != nil {
+		t.Fatalf("ListRounds: %v", err)
+	}
+	if len(rounds) != 0 {
+		t.Fatalf("expected 0 rounds, got %d", len(rounds))
+	}
+}
