@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { useSyncExternalStore } from 'react'
 import { apiBackend } from './backend'
 
 const LANGUAGE_STORAGE_KEY = 'ts_language'
@@ -18,6 +19,31 @@ const FALLBACK_LANGUAGES = ['en', 'de']
 // seeing the same array reference.
 export const AVAILABLE_LANGUAGES: string[] = [...FALLBACK_LANGUAGES]
 
+// useAvailableLanguages (below) needs a snapshot that changes reference
+// whenever AVAILABLE_LANGUAGES' contents change -- useSyncExternalStore
+// compares snapshots with Object.is, so mutating AVAILABLE_LANGUAGES in
+// place (same reference) would never be seen as a change. This cache is
+// rebuilt only when refreshAvailableLanguages actually updates the list.
+let languagesSnapshot: readonly string[] = AVAILABLE_LANGUAGES
+const languageListeners = new Set<() => void>()
+
+function subscribeAvailableLanguages(listener: () => void): () => void {
+  languageListeners.add(listener)
+  return () => languageListeners.delete(listener)
+}
+
+function getAvailableLanguagesSnapshot(): readonly string[] {
+  return languagesSnapshot
+}
+
+// React hook for components that render the language list: re-renders
+// automatically once GET /api/i18n resolves and reveals drop-in languages,
+// unlike reading AVAILABLE_LANGUAGES directly (which is correct data but
+// triggers no re-render on mutation).
+export function useAvailableLanguages(): readonly string[] {
+  return useSyncExternalStore(subscribeAvailableLanguages, getAvailableLanguagesSnapshot)
+}
+
 // Fetches the deployment's available languages from the backend and
 // updates AVAILABLE_LANGUAGES in place. Exported so callers/tests can
 // await it directly; also fired once, unawaited, at module init below.
@@ -30,6 +56,8 @@ export async function refreshAvailableLanguages(): Promise<void> {
     const data = (await res.json()) as { languages?: string[] }
     if (Array.isArray(data.languages) && data.languages.length > 0) {
       AVAILABLE_LANGUAGES.splice(0, AVAILABLE_LANGUAGES.length, ...data.languages)
+      languagesSnapshot = [...AVAILABLE_LANGUAGES]
+      languageListeners.forEach((listener) => listener())
     }
   } catch {
     // Network error or bad response -- keep the hardcoded fallback.

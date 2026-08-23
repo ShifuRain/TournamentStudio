@@ -13,7 +13,7 @@ vi.mock('../auth/AuthContext', () => ({
   useAuth: () => ({ role: 'organizer', token: 'abc', logout: logoutMock }),
 }))
 vi.mock('../i18n/i18n', () => ({
-  AVAILABLE_LANGUAGES: ['en', 'de'],
+  useAvailableLanguages: () => ['en', 'de'],
   changeLanguage: vi.fn(),
 }))
 

@@ -1,11 +1,12 @@
 import { Link, Outlet } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
-import { AVAILABLE_LANGUAGES, changeLanguage } from '../i18n/i18n'
+import { useAvailableLanguages, changeLanguage } from '../i18n/i18n'
 
 export function AppShell() {
   const { t, i18n } = useTranslation()
   const { role, logout } = useAuth()
+  const availableLanguages = useAvailableLanguages()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -19,7 +20,7 @@ export function AppShell() {
             onChange={(e) => changeLanguage(e.target.value)}
             aria-label={t('nav_language')}
           >
-            {AVAILABLE_LANGUAGES.map((lang) => (
+            {availableLanguages.map((lang) => (
               <option key={lang} value={lang}>
                 {lang.toUpperCase()}
               </option>

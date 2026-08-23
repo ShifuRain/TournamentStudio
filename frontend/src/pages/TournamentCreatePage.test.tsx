@@ -10,7 +10,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }))
 vi.mock('../i18n/i18n', () => ({
-  AVAILABLE_LANGUAGES: ['en', 'de'],
+  useAvailableLanguages: () => ['en', 'de'],
 }))
 
 const navigateMock = vi.fn()

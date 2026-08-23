@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
+import { createElement } from 'react'
 
 describe('i18n', () => {
   beforeEach(() => {
@@ -81,5 +83,33 @@ describe('i18n', () => {
     await refreshAvailableLanguages()
 
     expect(AVAILABLE_LANGUAGES).toEqual(['en', 'de'])
+  })
+
+  it('useAvailableLanguages re-renders a component once refreshAvailableLanguages resolves with new languages', async () => {
+    const { useAvailableLanguages, refreshAvailableLanguages } = await import('./i18n')
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/i18n') {
+          return new Response(JSON.stringify({ languages: ['en', 'de', 'fr'] }), { status: 200 })
+        }
+        return new Response(JSON.stringify({ greeting: 'Hello' }), { status: 200 })
+      }),
+    )
+
+    function Probe() {
+      const languages = useAvailableLanguages()
+      return createElement('span', null, languages.join(','))
+    }
+
+    render(createElement(Probe))
+    expect(screen.getByText('en,de')).toBeInTheDocument()
+
+    await refreshAvailableLanguages()
+
+    await waitFor(() => {
+      expect(screen.getByText('en,de,fr')).toBeInTheDocument()
+    })
   })
 })

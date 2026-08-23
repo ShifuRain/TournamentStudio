@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { PluginsResponse, Tournament } from '../api/types'
-import { AVAILABLE_LANGUAGES } from '../i18n/i18n'
+import { useAvailableLanguages } from '../i18n/i18n'
 
 export function TournamentCreatePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const availableLanguages = useAvailableLanguages()
 
   const { data: plugins } = useQuery({
     queryKey: ['plugins'],
@@ -70,7 +71,7 @@ export function TournamentCreatePage() {
             onChange={(e) => setLanguage(e.target.value)}
             className="mt-1 w-full rounded border px-3 py-2"
           >
-            {AVAILABLE_LANGUAGES.map((lang) => (
+            {availableLanguages.map((lang) => (
               <option key={lang} value={lang}>
                 {lang.toUpperCase()}
               </option>
