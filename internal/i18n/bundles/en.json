@@ -21,5 +21,9 @@
   "tournament_type": "Tournament Type",
   "tournament_select_type": "Select a tournament type",
   "tournament_create_error": "Could not create the tournament. Please try again.",
-  "tournament_create_submit": "Create"
+  "tournament_create_submit": "Create",
+  "tab_teams": "Teams",
+  "tab_schedule": "Rounds & Schedule",
+  "tab_standings": "Live Standings",
+  "tab_coming_soon": "Coming soon"
 }

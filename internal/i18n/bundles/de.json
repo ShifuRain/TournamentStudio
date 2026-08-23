@@ -21,5 +21,9 @@
   "tournament_type": "Turnierart",
   "tournament_select_type": "Turnierart auswählen",
   "tournament_create_error": "Das Turnier konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
-  "tournament_create_submit": "Erstellen"
+  "tournament_create_submit": "Erstellen",
+  "tab_teams": "Teams",
+  "tab_schedule": "Runden & Zeitplan",
+  "tab_standings": "Live-Ergebnisse",
+  "tab_coming_soon": "Demnächst verfügbar"
 }
