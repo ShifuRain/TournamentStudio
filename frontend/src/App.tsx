@@ -10,6 +10,7 @@ import { TournamentCreatePage } from './pages/TournamentCreatePage'
 import { TournamentDetailPage } from './pages/TournamentDetailPage'
 import { TeamsTab } from './pages/TeamsTab'
 import { TeamImportPage } from './pages/TeamImportPage'
+import { SchedulePage } from './pages/SchedulePage'
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
                   <Route index element={<Navigate to="teams" replace />} />
                   <Route path="teams" element={<TeamsTab />} />
                   <Route path="teams/import" element={<TeamImportPage />} />
+                  <Route path="schedule" element={<SchedulePage />} />
                 </Route>
               </Route>
             </Route>

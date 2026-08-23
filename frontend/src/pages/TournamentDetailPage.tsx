@@ -31,9 +31,9 @@ export function TournamentDetailPage() {
         <NavLink to="teams" className={tabLinkClass}>
           {t('tab_teams')}
         </NavLink>
-        <span className="cursor-not-allowed px-4 py-2 text-sm text-gray-300" title={t('tab_coming_soon')}>
+        <NavLink to="schedule" className={tabLinkClass}>
           {t('tab_schedule')}
-        </span>
+        </NavLink>
         <span className="cursor-not-allowed px-4 py-2 text-sm text-gray-300" title={t('tab_coming_soon')}>
           {t('tab_standings')}
         </span>

@@ -42,6 +42,6 @@ describe('TournamentDetailPage', () => {
 
     expect(await screen.findByText('Herbstregatta')).toBeInTheDocument()
     expect(screen.getByText('teams content')).toBeInTheDocument()
-    expect(screen.getByText('tab_schedule')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'tab_schedule' })).toBeInTheDocument()
   })
 })

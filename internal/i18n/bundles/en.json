@@ -39,5 +39,12 @@
   "import_error": "Could not import the file. Please try again.",
   "import_result_summary": "{{count}} team(s) imported.",
   "import_row_problem": "Row {{row}}: {{message}}",
-  "import_back_link": "Back to Teams"
+  "import_back_link": "Back to Teams",
+  "schedule_courses_title": "Courses",
+  "schedule_courses_name": "Name",
+  "schedule_courses_interval": "Heat interval (seconds)",
+  "schedule_courses_offset": "Delay offset (seconds)",
+  "schedule_courses_add_submit": "Add Course",
+  "schedule_courses_add_error": "Could not add the course. Please try again.",
+  "schedule_courses_update_error": "Could not update the course. Please try again."
 }

@@ -39,5 +39,12 @@
   "import_error": "Die Datei konnte nicht importiert werden. Bitte versuchen Sie es erneut.",
   "import_result_summary": "{{count}} Team(s) importiert.",
   "import_row_problem": "Zeile {{row}}: {{message}}",
-  "import_back_link": "Zurück zu Teams"
+  "import_back_link": "Zurück zu Teams",
+  "schedule_courses_title": "Bahnen",
+  "schedule_courses_name": "Name",
+  "schedule_courses_interval": "Heat-Abstand (Sekunden)",
+  "schedule_courses_offset": "Verzögerung (Sekunden)",
+  "schedule_courses_add_submit": "Bahn hinzufügen",
+  "schedule_courses_add_error": "Die Bahn konnte nicht hinzugefügt werden. Bitte versuchen Sie es erneut.",
+  "schedule_courses_update_error": "Die Bahn konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut."
 }

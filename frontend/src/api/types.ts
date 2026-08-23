@@ -54,3 +54,30 @@ export interface ImportResult {
   imported: number
   problems: ImportProblem[]
 }
+
+export interface Course {
+  id: number
+  tournament_id: number
+  name: string
+  heat_interval_seconds: number
+  delay_offset_seconds: number
+}
+
+export interface Group {
+  id: number
+  team_ids: string[]
+}
+
+export interface DivisionInfo {
+  id: number
+  name: string
+  team_ids: string[]
+}
+
+export interface Round {
+  id: number
+  round_number: number
+  status: string
+  groups: Group[]
+  divisions: DivisionInfo[]
+}
