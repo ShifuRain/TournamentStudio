@@ -59,5 +59,16 @@
   "schedule_assignments_course_label": "Course",
   "schedule_assignments_select_course": "Select a course",
   "schedule_assignments_submit": "Schedule",
-  "schedule_assignments_error": "Could not schedule. Please try again."
+  "schedule_assignments_error": "Could not schedule. Please try again.",
+  "schedule_heats_title": "Heats",
+  "schedule_heats_status_scheduled": "Scheduled",
+  "schedule_heats_status_closed": "Closed",
+  "schedule_heats_start_label": "Start time",
+  "schedule_heats_start_override_submit": "Update start time",
+  "schedule_heats_start_override_error": "Could not update the start time. Please try again.",
+  "schedule_heats_results_time": "Time (seconds)",
+  "schedule_heats_results_status": "Status",
+  "schedule_heats_results_status_finished": "Finished",
+  "schedule_heats_results_submit": "Submit Results",
+  "schedule_heats_results_error": "Could not submit results. Please try again."
 }

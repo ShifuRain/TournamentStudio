@@ -59,5 +59,16 @@
   "schedule_assignments_course_label": "Bahn",
   "schedule_assignments_select_course": "Bahn auswählen",
   "schedule_assignments_submit": "Einteilen",
-  "schedule_assignments_error": "Einteilung fehlgeschlagen. Bitte versuchen Sie es erneut."
+  "schedule_assignments_error": "Einteilung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+  "schedule_heats_title": "Heats",
+  "schedule_heats_status_scheduled": "Geplant",
+  "schedule_heats_status_closed": "Abgeschlossen",
+  "schedule_heats_start_label": "Startzeit",
+  "schedule_heats_start_override_submit": "Startzeit aktualisieren",
+  "schedule_heats_start_override_error": "Die Startzeit konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+  "schedule_heats_results_time": "Zeit (Sekunden)",
+  "schedule_heats_results_status": "Status",
+  "schedule_heats_results_status_finished": "Beendet",
+  "schedule_heats_results_submit": "Ergebnisse übermitteln",
+  "schedule_heats_results_error": "Ergebnisse konnten nicht übermittelt werden. Bitte versuchen Sie es erneut."
 }
