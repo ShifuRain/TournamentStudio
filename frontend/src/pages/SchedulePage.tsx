@@ -62,6 +62,11 @@ export function SchedulePage() {
     <div>
       <ScheduleCourses />
       {rounds.length === 0 && <ScheduleRoundCreate />}
+      {currentRound && (
+        <h2 className="mb-4 text-lg font-semibold">
+          {t('schedule_round_history_entry', { number: currentRound.round_number, status: currentRound.status })}
+        </h2>
+      )}
       {currentRound && unscheduledGroups.length > 0 && (
         <ScheduleAssignments mode="group" roundId={currentRound.id} items={unscheduledGroups} />
       )}

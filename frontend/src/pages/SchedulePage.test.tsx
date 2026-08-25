@@ -136,4 +136,33 @@ describe('SchedulePage', () => {
     expect(screen.queryByText(/Group 5/)).not.toBeInTheDocument()
     expect(screen.queryByText(/Group 6/)).not.toBeInTheDocument()
   })
+
+  it('renders a heading with the current round number and status once a round exists', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+    vi.mocked(client.api.get).mockImplementation((path: unknown) => {
+      const p = path as string
+      if (p === '/api/tournaments/1/rounds')
+        return Promise.resolve({
+          rounds: [{ id: 1, round_number: 1, status: 'open', groups: [], divisions: [] }],
+        })
+      if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/teams') return Promise.resolve([])
+      if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
+      return Promise.reject(new Error(`unexpected path ${p}`))
+    })
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MemoryRouter initialEntries={['/tournaments/1/schedule']}>
+          <Routes>
+            <Route path="/tournaments/:id/schedule" element={<SchedulePage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+
+    expect(
+      await screen.findByText('schedule_round_history_entry {"number":1,"status":"open"}'),
+    ).toBeInTheDocument()
+  })
 })
