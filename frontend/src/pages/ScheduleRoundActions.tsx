@@ -37,6 +37,7 @@ export function ScheduleRoundActions({ currentRound, allRounds }: ScheduleRoundA
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['rounds', id] })
+      setCuts([{ name: '', size: 1 }])
     },
   })
 
@@ -65,63 +66,67 @@ export function ScheduleRoundActions({ currentRound, allRounds }: ScheduleRoundA
           </button>
         </div>
 
-        <h3 className="mb-2 text-sm font-semibold">{t('schedule_round_actions_divisions_title')}</h3>
-        {cuts.map((cut, index) => (
-          <div key={index} className="mb-2 flex items-end gap-2">
+        {currentRound.divisions.length === 0 && (
+          <>
+            <h3 className="mb-2 text-sm font-semibold">{t('schedule_round_actions_divisions_title')}</h3>
+            {cuts.map((cut, index) => (
+              <div key={index} className="mb-2 flex items-end gap-2">
+                <div>
+                  <label htmlFor={`cut-name-${index}`} className="block text-xs font-medium">
+                    {t('schedule_round_actions_divisions_name')}
+                  </label>
+                  <input
+                    id={`cut-name-${index}`}
+                    value={cut.name}
+                    onChange={(e) =>
+                      setCuts((prev) => prev.map((c, i) => (i === index ? { ...c, name: e.target.value } : c)))
+                    }
+                    className="rounded border px-2 py-1 text-sm"
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`cut-size-${index}`} className="block text-xs font-medium">
+                    {t('schedule_round_actions_divisions_size')}
+                  </label>
+                  <input
+                    id={`cut-size-${index}`}
+                    type="number"
+                    min={1}
+                    value={cut.size}
+                    onChange={(e) =>
+                      setCuts((prev) =>
+                        prev.map((c, i) => (i === index ? { ...c, size: Number(e.target.value) } : c)),
+                      )
+                    }
+                    className="w-20 rounded border px-2 py-1 text-sm"
+                  />
+                </div>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setCuts((prev) => [...prev, { name: '', size: 1 }])}
+              className="mb-3 rounded border px-3 py-1 text-xs"
+            >
+              {t('schedule_round_actions_divisions_add_cut')}
+            </button>
+            {divisionsMutation.isError && (
+              <p role="alert" className="mb-2 text-sm text-red-600">
+                {t('schedule_round_actions_divisions_error')}
+              </p>
+            )}
             <div>
-              <label htmlFor={`cut-name-${index}`} className="block text-xs font-medium">
-                {t('schedule_round_actions_divisions_name')}
-              </label>
-              <input
-                id={`cut-name-${index}`}
-                value={cut.name}
-                onChange={(e) =>
-                  setCuts((prev) => prev.map((c, i) => (i === index ? { ...c, name: e.target.value } : c)))
-                }
-                className="rounded border px-2 py-1 text-sm"
-              />
+              <button
+                type="button"
+                onClick={() => divisionsMutation.mutate()}
+                disabled={divisionsMutation.isPending || !cuts.some((c) => c.name.trim() !== '')}
+                className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+              >
+                {t('schedule_round_actions_divisions_submit')}
+              </button>
             </div>
-            <div>
-              <label htmlFor={`cut-size-${index}`} className="block text-xs font-medium">
-                {t('schedule_round_actions_divisions_size')}
-              </label>
-              <input
-                id={`cut-size-${index}`}
-                type="number"
-                min={1}
-                value={cut.size}
-                onChange={(e) =>
-                  setCuts((prev) =>
-                    prev.map((c, i) => (i === index ? { ...c, size: Number(e.target.value) } : c)),
-                  )
-                }
-                className="w-20 rounded border px-2 py-1 text-sm"
-              />
-            </div>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={() => setCuts((prev) => [...prev, { name: '', size: 1 }])}
-          className="mb-3 rounded border px-3 py-1 text-xs"
-        >
-          {t('schedule_round_actions_divisions_add_cut')}
-        </button>
-        {divisionsMutation.isError && (
-          <p role="alert" className="mb-2 text-sm text-red-600">
-            {t('schedule_round_actions_divisions_error')}
-          </p>
+          </>
         )}
-        <div>
-          <button
-            type="button"
-            onClick={() => divisionsMutation.mutate()}
-            disabled={divisionsMutation.isPending}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
-            {t('schedule_round_actions_divisions_submit')}
-          </button>
-        </div>
       </section>
       <RoundHistory allRounds={allRounds} />
     </>

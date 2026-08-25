@@ -80,4 +80,30 @@ describe('ScheduleRoundActions', () => {
 
     expect(screen.getByText('schedule_round_history_title')).toBeInTheDocument()
   })
+
+  it('does not render the divisions form once the round already has divisions', () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+
+    const roundWithDivisions: Round = {
+      ...closedRound,
+      divisions: [{ id: 1, name: 'Gold', team_ids: ['1', '2'] }],
+    }
+    renderActions(roundWithDivisions, [earlierRound, roundWithDivisions])
+
+    expect(screen.queryByText('schedule_round_actions_divisions_title')).not.toBeInTheDocument()
+    expect(screen.queryByText('schedule_round_actions_divisions_submit')).not.toBeInTheDocument()
+  })
+
+  it('disables the divisions submit button until a cut has a non-blank name', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+
+    renderActions(closedRound, [earlierRound, closedRound])
+
+    const submitButton = screen.getByText('schedule_round_actions_divisions_submit')
+    expect(submitButton).toBeDisabled()
+
+    await userEvent.type(screen.getByLabelText('schedule_round_actions_divisions_name'), 'Gold')
+
+    expect(submitButton).toBeEnabled()
+  })
 })
