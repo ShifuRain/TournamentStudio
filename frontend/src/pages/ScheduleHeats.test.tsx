@@ -110,4 +110,18 @@ describe('ScheduleHeats', () => {
     expect(screen.queryByText('1', { selector: 'td' })).not.toBeInTheDocument()
     expect(screen.queryByText('2', { selector: 'td' })).not.toBeInTheDocument()
   })
+
+  it('shows the effective start time in the heat row for every role', () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'spectator', token: 'x', login: vi.fn(), logout: vi.fn() })
+
+    renderHeats([openHeat])
+
+    const expected = new Date(openHeat.effective_start).toLocaleString()
+    expect(
+      screen.getByText((_, node) => {
+        if (!node?.textContent?.includes(expected)) return false
+        return Array.from(node.children).every((child) => !child.textContent?.includes(expected))
+      }),
+    ).toBeInTheDocument()
+  })
 })

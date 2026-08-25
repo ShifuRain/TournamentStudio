@@ -79,7 +79,7 @@ function HeatRow({
     <li className="rounded border p-3">
       <div className="mb-2 flex items-center justify-between text-sm">
         <span>
-          {courseName} —{' '}
+          {courseName} — {new Date(heat.effective_start).toLocaleString()} —{' '}
           {t(heat.status === 'closed' ? 'schedule_heats_status_closed' : 'schedule_heats_status_scheduled')}
         </span>
         {role === 'organizer' && (
