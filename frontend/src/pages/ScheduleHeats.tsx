@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import type { Course, Heat, Round } from '../api/types'
+import type { Course, Heat, Round, Team } from '../api/types'
 
 interface ScheduleHeatsProps {
   heats: Heat[]
   courses: Course[]
   currentRound: Round
+  teams: Team[]
 }
 
 type ResultEntry = { timeSeconds: string; status: string }
@@ -21,7 +22,21 @@ function teamIdsForHeat(heat: Heat, round: Round): string[] {
   return round.divisions.find((d) => d.id === heat.division_id)?.team_ids ?? []
 }
 
-function HeatRow({ heat, courseName, round }: { heat: Heat; courseName: string; round: Round }) {
+function teamName(teamId: string, teams: Team[]): string {
+  return teams.find((team) => String(team.id) === teamId)?.name ?? teamId
+}
+
+function HeatRow({
+  heat,
+  courseName,
+  round,
+  teams,
+}: {
+  heat: Heat
+  courseName: string
+  round: Round
+  teams: Team[]
+}) {
   const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
   const { role } = useAuth()
@@ -98,7 +113,7 @@ function HeatRow({ heat, courseName, round }: { heat: Heat; courseName: string; 
             <tbody>
               {teamIds.map((teamId) => (
                 <tr key={teamId}>
-                  <td className="py-1">{teamId}</td>
+                  <td className="py-1">{teamName(teamId, teams)}</td>
                   <td>
                     <label htmlFor={`time-${heat.id}-${teamId}`} className="sr-only">
                       {t('schedule_heats_results_time')} — {teamId}
@@ -160,7 +175,7 @@ function HeatRow({ heat, courseName, round }: { heat: Heat; courseName: string; 
   )
 }
 
-export function ScheduleHeats({ heats, courses, currentRound }: ScheduleHeatsProps) {
+export function ScheduleHeats({ heats, courses, currentRound, teams }: ScheduleHeatsProps) {
   const { t } = useTranslation()
 
   if (heats.length === 0) {
@@ -176,7 +191,13 @@ export function ScheduleHeats({ heats, courses, currentRound }: ScheduleHeatsPro
       <h2 className="mb-3 text-lg font-semibold">{t('schedule_heats_title')}</h2>
       <ul className="space-y-3">
         {heats.map((heat) => (
-          <HeatRow key={heat.id} heat={heat} courseName={courseName(heat.course_id)} round={currentRound} />
+          <HeatRow
+            key={heat.id}
+            heat={heat}
+            courseName={courseName(heat.course_id)}
+            round={currentRound}
+            teams={teams}
+          />
         ))}
       </ul>
     </section>

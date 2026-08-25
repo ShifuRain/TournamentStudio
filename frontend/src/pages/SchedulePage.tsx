@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { Course, Heat, Round } from '../api/types'
+import type { Course, Heat, Round, Team } from '../api/types'
 import { ScheduleCourses } from './ScheduleCourses'
 import { ScheduleRoundCreate } from './ScheduleRoundCreate'
 import { ScheduleAssignments } from './ScheduleAssignments'
@@ -34,6 +34,13 @@ export function SchedulePage() {
   const heats = scheduleData?.heats ?? []
   const currentRoundHeats = currentRound ? heats.filter((h) => h.round_id === currentRound.id) : []
 
+  const { data: teamsData } = useQuery({
+    queryKey: ['teams', id],
+    queryFn: () => api.get<Team[]>(`/api/tournaments/${id}/teams`),
+    enabled: !!id,
+  })
+  const teams = teamsData ?? []
+
   const scheduledGroupIds = new Set(heats.filter((h) => h.group_id !== null).map((h) => h.group_id))
   const scheduledDivisionIds = new Set(heats.filter((h) => h.division_id !== null).map((h) => h.division_id))
 
@@ -57,7 +64,7 @@ export function SchedulePage() {
         <ScheduleAssignments mode="division" roundId={currentRound.id} items={unscheduledDivisions} />
       )}
       {currentRound && (
-        <ScheduleHeats heats={currentRoundHeats} courses={courses} currentRound={currentRound} />
+        <ScheduleHeats heats={currentRoundHeats} courses={courses} currentRound={currentRound} teams={teams} />
       )}
       {currentRound && <ScheduleRoundActions currentRound={currentRound} allRounds={rounds} />}
     </div>

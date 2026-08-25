@@ -22,6 +22,7 @@ describe('SchedulePage', () => {
       const p = path as string
       if (p === '/api/tournaments/1/rounds') return Promise.resolve({ rounds: [] })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/teams') return Promise.resolve([])
       if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })
@@ -70,6 +71,7 @@ describe('SchedulePage', () => {
       if (p === '/api/tournaments/1/rounds')
         return Promise.resolve({ rounds: [{ id: 1, round_number: 1, status: 'open', groups: [], divisions: [] }] })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/teams') return Promise.resolve([])
       if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })
@@ -105,6 +107,7 @@ describe('SchedulePage', () => {
           ],
         })
       if (p === '/api/tournaments/1/courses') return Promise.resolve({ courses: [] })
+      if (p === '/api/tournaments/1/teams') return Promise.resolve([])
       if (p === '/api/tournaments/1/schedule') return Promise.resolve({ heats: [] })
       return Promise.reject(new Error(`unexpected path ${p}`))
     })

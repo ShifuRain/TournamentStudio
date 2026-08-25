@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ScheduleHeats } from './ScheduleHeats'
 import * as client from '../api/client'
 import { useAuth } from '../auth/AuthContext'
-import type { Course, Heat, Round } from '../api/types'
+import type { Course, Heat, Round, Team } from '../api/types'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -27,6 +27,10 @@ const round: Round = {
 const courses: Course[] = [
   { id: 1, tournament_id: 1, name: 'Course A', heat_interval_seconds: 300, delay_offset_seconds: 0 },
 ]
+const teams: Team[] = [
+  { id: 1, tournament_id: 1, name: 'Team One', club: 'Club A', extra_fields: {} },
+  { id: 2, tournament_id: 1, name: 'Team Two', club: 'Club B', extra_fields: {} },
+]
 const openHeat: Heat = {
   id: 100,
   round_id: 1,
@@ -46,7 +50,7 @@ function renderHeats(heats: Heat[]) {
         <Routes>
           <Route
             path="/tournaments/:id/schedule"
-            element={<ScheduleHeats heats={heats} courses={courses} currentRound={round} />}
+            element={<ScheduleHeats heats={heats} courses={courses} currentRound={round} teams={teams} />}
           />
         </Routes>
       </MemoryRouter>
@@ -94,5 +98,16 @@ describe('ScheduleHeats', () => {
 
     const { container } = renderHeats([])
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('shows team names instead of raw team IDs in the results table', () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
+
+    renderHeats([openHeat])
+
+    expect(screen.getByText('Team One')).toBeInTheDocument()
+    expect(screen.getByText('Team Two')).toBeInTheDocument()
+    expect(screen.queryByText('1', { selector: 'td' })).not.toBeInTheDocument()
+    expect(screen.queryByText('2', { selector: 'td' })).not.toBeInTheDocument()
   })
 })
