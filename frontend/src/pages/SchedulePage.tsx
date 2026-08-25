@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { Course, Heat, Round, Team } from '../api/types'
@@ -9,6 +10,7 @@ import { ScheduleHeats } from './ScheduleHeats'
 import { ScheduleRoundActions } from './ScheduleRoundActions'
 
 export function SchedulePage() {
+  const { t } = useTranslation()
   const { id } = useParams<{ id: string }>()
 
   const { data: roundsData } = useQuery({
@@ -47,7 +49,10 @@ export function SchedulePage() {
   const unscheduledGroups =
     currentRound?.groups
       .filter((g) => !scheduledGroupIds.has(g.id))
-      .map((g) => ({ id: g.id, label: `Group ${g.id} (${g.team_ids.length} teams)` })) ?? []
+      .map((g, index) => ({
+        id: g.id,
+        label: `${t('schedule_round_create_group_label', { number: index + 1 })} (${g.team_ids.length} teams)`,
+      })) ?? []
   const unscheduledDivisions =
     currentRound?.divisions
       .filter((d) => !scheduledDivisionIds.has(d.id))
