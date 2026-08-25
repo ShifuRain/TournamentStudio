@@ -59,8 +59,26 @@ function renderHeats(heats: Heat[]) {
 }
 
 describe('ScheduleHeats', () => {
-  it('submits results for both teams in an open heat', async () => {
+  it('submits results for both teams in an open heat as time_entry', async () => {
     vi.mocked(useAuth).mockReturnValue({ role: 'time_entry', token: 'x', login: vi.fn(), logout: vi.fn() })
+    vi.mocked(client.api.post).mockResolvedValue({ results_recorded: 2 })
+
+    renderHeats([openHeat])
+
+    await userEvent.type(screen.getByLabelText('schedule_heats_results_time — 1'), '100.5')
+    await userEvent.type(screen.getByLabelText('schedule_heats_results_time — 2'), '105.2')
+    await userEvent.click(screen.getByText('schedule_heats_results_submit'))
+
+    await waitFor(() =>
+      expect(client.api.post).toHaveBeenCalledWith('/api/tournaments/1/heats/100/results', {
+        '1': { time_seconds: 100.5 },
+        '2': { time_seconds: 105.2 },
+      }),
+    )
+  })
+
+  it('submits results for both teams in an open heat as organizer', async () => {
+    vi.mocked(useAuth).mockReturnValue({ role: 'organizer', token: 'x', login: vi.fn(), logout: vi.fn() })
     vi.mocked(client.api.post).mockResolvedValue({ results_recorded: 2 })
 
     renderHeats([openHeat])
