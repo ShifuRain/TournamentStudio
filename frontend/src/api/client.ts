@@ -61,4 +61,5 @@ export const api = {
     request<T>(path, { method: 'PATCH', body: body !== undefined ? JSON.stringify(body) : undefined }),
   postForm: <T>(path: string, form: FormData): Promise<T> =>
     request<T>(path, { method: 'POST', body: form }),
+  delete: <T>(path: string): Promise<T> => request<T>(path, { method: 'DELETE' }),
 }

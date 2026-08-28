@@ -12,6 +12,7 @@ import { TeamsTab } from './pages/TeamsTab'
 import { TeamImportPage } from './pages/TeamImportPage'
 import { SchedulePage } from './pages/SchedulePage'
 import { WatchPage } from './pages/WatchPage'
+import { PluginsPage } from './pages/PluginsPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <Route element={<AppShell />}>
                 <Route path="/" element={<Navigate to="/tournaments" replace />} />
                 <Route path="/tournaments" element={<TournamentListPage />} />
+                <Route path="/plugins" element={<PluginsPage />} />
                 <Route path="/tournaments/new" element={<TournamentCreatePage />} />
                 <Route path="/tournaments/:id" element={<TournamentDetailPage />}>
                   <Route index element={<Navigate to="teams" replace />} />

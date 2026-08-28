@@ -26,11 +26,13 @@ export interface SportPlugin {
   display_name: string
   compatible_tournament_types: string[]
   roster_fields: RosterField[] | null
+  source: string
 }
 
 export interface TournamentTypePlugin {
   id: string
   compatible_sports: string[]
+  source: string
 }
 
 export interface PluginsResponse {

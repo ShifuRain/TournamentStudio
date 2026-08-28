@@ -15,6 +15,7 @@ export function AppShell() {
           TournamentStudio
         </Link>
         <div className="flex items-center gap-4 text-sm">
+          <Link to="/plugins">{t('nav_plugins')}</Link>
           <select
             value={i18n.language}
             onChange={(e) => changeLanguage(e.target.value)}

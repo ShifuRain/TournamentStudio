@@ -84,5 +84,14 @@
   "watch_connection_lost": "Live updates unavailable — showing last loaded data",
   "watch_rank": "Rank",
   "watch_team": "Team",
-  "watch_time_or_status": "Time / Status"
+  "watch_time_or_status": "Time / Status",
+  "nav_plugins": "Plugins",
+  "plugins_title": "Plugins",
+  "plugins_sports_title": "Sport plugins",
+  "plugins_tournament_types_title": "Tournament type plugins",
+  "plugins_builtin_badge": "Built-in",
+  "plugins_delete": "Delete",
+  "plugins_upload_title": "Upload a plugin",
+  "plugins_upload_file_label": "Choose a .lua file",
+  "plugins_upload_submit": "Upload"
 }
