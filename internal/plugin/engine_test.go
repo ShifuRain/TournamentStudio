@@ -203,3 +203,36 @@ func TestSandboxDeniesDangerousGlobals(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadSetsSourceForBundledAndExternalPlugins(t *testing.T) {
+	dir := t.TempDir()
+	writeTestPlugin(t, dir, "external-sport.lua", `
+return {
+  id = "external-sport",
+  display_name = "External Sport",
+  compatible_tournament_types = {"test-format"},
+}
+`)
+
+	e, err := Load(dir)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	defer e.Close()
+
+	bundled := findSport(e, "dragonboat")
+	if bundled == nil {
+		t.Fatal("expected bundled dragonboat sport plugin to be loaded")
+	}
+	if bundled.Source != "bundled" {
+		t.Fatalf("expected bundled plugin's Source to be %q, got %q", "bundled", bundled.Source)
+	}
+
+	external := findSport(e, "external-sport")
+	if external == nil {
+		t.Fatal("expected external-sport plugin to be loaded")
+	}
+	if external.Source != "external-sport.lua" {
+		t.Fatalf("expected external plugin's Source to be its filename, got %q", external.Source)
+	}
+}

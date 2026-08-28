@@ -17,11 +17,13 @@ type SportPlugin struct {
 	DisplayName               string
 	CompatibleTournamentTypes []string
 	RosterFields              []RosterField
+	Source                    string
 }
 
 type TournamentTypePlugin struct {
 	ID               string
 	CompatibleSports []string
+	Source           string
 
 	state             *lua.LState
 	mu                sync.Mutex

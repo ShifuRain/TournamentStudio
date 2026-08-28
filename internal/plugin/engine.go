@@ -39,7 +39,7 @@ func Load(externalDir string) (*Engine, error) {
 		if err != nil {
 			return nil, fmt.Errorf("read bundled plugin %s: %w", entry.Name(), err)
 		}
-		if err := e.loadSource(entry.Name(), source); err != nil {
+		if err := e.loadSource(entry.Name(), source, "bundled"); err != nil {
 			return nil, fmt.Errorf("bundled plugin %s: %w", entry.Name(), err)
 		}
 	}
@@ -61,7 +61,7 @@ func Load(externalDir string) (*Engine, error) {
 			fmt.Fprintf(os.Stderr, "plugin: skipping %s: %v\n", entry.Name(), err)
 			continue
 		}
-		if err := e.loadSource(entry.Name(), source); err != nil {
+		if err := e.loadSource(entry.Name(), source, entry.Name()); err != nil {
 			fmt.Fprintf(os.Stderr, "plugin: skipping %s: %v\n", entry.Name(), err)
 		}
 	}
@@ -117,7 +117,7 @@ func newSandboxedState() *lua.LState {
 	return L
 }
 
-func (e *Engine) loadSource(name string, source []byte) error {
+func (e *Engine) loadSource(name string, source []byte, pluginSource string) error {
 	L := newSandboxedState()
 
 	if err := L.DoString(string(source)); err != nil {
@@ -144,6 +144,7 @@ func (e *Engine) loadSource(name string, source []byte) error {
 	switch {
 	case tbl.RawGetString("compatible_tournament_types") != lua.LNil:
 		sp := parseSportPlugin(tbl, id)
+		sp.Source = pluginSource
 		e.sports[sp.ID] = sp
 		L.Close()
 		return nil
@@ -153,6 +154,7 @@ func (e *Engine) loadSource(name string, source []byte) error {
 			L.Close()
 			return fmt.Errorf("%s: %w", name, err)
 		}
+		ttp.Source = pluginSource
 		e.tournamentTypes[ttp.ID] = ttp
 		return nil
 	default:
