@@ -79,6 +79,7 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/divisions/schedule", organizerOnly(http.HandlerFunc(s.handleScheduleDivisions)))
 	s.mux.Handle("PATCH /api/tournaments/{id}/heats/{heat_id}", organizerOnly(http.HandlerFunc(s.handleUpdateHeat)))
 	s.mux.Handle("GET /api/tournaments/{id}/schedule", authenticated(http.HandlerFunc(s.handleGetSchedule)))
+	s.mux.Handle("GET /api/tournaments/{id}/standings", authenticated(http.HandlerFunc(s.handleGetStandings)))
 
 	// Unmatched /api/... paths must 404 (and wrong-method requests to a
 	// real endpoint must 405), not fall through to the SPA catch-all
