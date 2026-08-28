@@ -30,6 +30,7 @@ export function useTournamentSocket(tournamentId: string | undefined): { connect
       socket.onopen = () => {
         failureCountRef.current = 0
         setConnectionLost(false)
+        void queryClient.invalidateQueries({ queryKey: ['standings', tournamentId] })
       }
       socket.onmessage = () => {
         void queryClient.invalidateQueries({ queryKey: ['standings', tournamentId] })

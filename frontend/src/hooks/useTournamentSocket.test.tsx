@@ -62,6 +62,14 @@ describe('useTournamentSocket', () => {
     expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['standings', '42'] })
   })
 
+  it('invalidates the standings query when the socket (re)connects', () => {
+    renderHook(() => useTournamentSocket('42'), { wrapper })
+
+    FakeWebSocket.instances[0].onopen?.()
+
+    expect(queryClient.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['standings', '42'] })
+  })
+
   it('reconnects with backoff and sets connectionLost after repeated failures', async () => {
     const { result } = renderHook(() => useTournamentSocket('42'), { wrapper })
 
