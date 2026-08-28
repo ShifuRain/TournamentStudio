@@ -26,7 +26,8 @@ func newTestServerWithWebFS(t *testing.T, webFS fs.FS) *Server {
 	}
 	t.Cleanup(func() { s.DB.Close() })
 
-	engine, err := plugin.Load(t.TempDir())
+	pluginsDir := t.TempDir()
+	engine, err := plugin.Load(pluginsDir)
 	if err != nil {
 		t.Fatalf("load plugins: %v", err)
 	}
@@ -37,7 +38,7 @@ func newTestServerWithWebFS(t *testing.T, webFS fs.FS) *Server {
 		t.Fatalf("load i18n: %v", err)
 	}
 
-	return New(s, engine, catalog, webFS)
+	return New(s, engine, pluginsDir, catalog, webFS)
 }
 
 func newTestServer(t *testing.T) *Server {

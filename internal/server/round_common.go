@@ -11,7 +11,7 @@ import (
 )
 
 func (s *Server) findTournamentType(id string) *plugin.TournamentTypePlugin {
-	for _, ttp := range s.plugins.TournamentTypes() {
+	for _, ttp := range s.plugins.Load().TournamentTypes() {
 		if ttp.ID == id {
 			return ttp
 		}

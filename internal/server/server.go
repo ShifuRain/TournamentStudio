@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/fs"
 	"net/http"
+	"sync/atomic"
 
 	"tournamentstudio/internal/auth"
 	"tournamentstudio/internal/i18n"
@@ -21,7 +22,8 @@ type Server struct {
 	sessions    *auth.SessionRepo
 	tournaments *tournament.Repo
 	teams       *team.Repo
-	plugins     *plugin.Engine
+	plugins     *atomic.Pointer[plugin.Engine]
+	pluginsDir  string
 	rounds      *round.Repo
 	hub         *broadcastHub
 	schedule    *schedule.Repo
@@ -29,14 +31,17 @@ type Server struct {
 	webFS       fs.FS
 }
 
-func New(s *store.Store, plugins *plugin.Engine, catalog *i18n.Catalog, webFS fs.FS) *Server {
+func New(s *store.Store, plugins *plugin.Engine, pluginsDir string, catalog *i18n.Catalog, webFS fs.FS) *Server {
+	pluginsPtr := &atomic.Pointer[plugin.Engine]{}
+	pluginsPtr.Store(plugins)
 	srv := &Server{
 		mux:         http.NewServeMux(),
 		users:       auth.NewRepo(s),
 		sessions:    auth.NewSessionRepo(s),
 		tournaments: tournament.NewRepo(s),
 		teams:       team.NewRepo(s),
-		plugins:     plugins,
+		plugins:     pluginsPtr,
+		pluginsDir:  pluginsDir,
 		rounds:      round.NewRepo(s),
 		hub:         newBroadcastHub(),
 		schedule:    schedule.NewRepo(s),
@@ -70,6 +75,8 @@ func (s *Server) routes() {
 	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/next", organizerOnly(http.HandlerFunc(s.handleNextRound)))
 	s.mux.Handle("POST /api/tournaments/{id}/rounds/{round_id}/divisions", organizerOnly(http.HandlerFunc(s.handleComputeDivisions)))
 	s.mux.Handle("GET /api/plugins", authenticated(http.HandlerFunc(s.handlePlugins)))
+	s.mux.Handle("POST /api/plugins", organizerOnly(http.HandlerFunc(s.handleUploadPlugin)))
+	s.mux.Handle("DELETE /api/plugins/{filename}", organizerOnly(http.HandlerFunc(s.handleDeletePlugin)))
 	s.mux.HandleFunc("GET /api/tournaments/{id}/ws", s.handleWebSocket)
 	s.mux.Handle("POST /api/tournaments/{id}/courses", organizerOnly(http.HandlerFunc(s.handleCreateCourse)))
 	s.mux.Handle("GET /api/tournaments/{id}/courses", authenticated(http.HandlerFunc(s.handleListCourses)))

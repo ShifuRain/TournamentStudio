@@ -88,7 +88,8 @@ func TestRoleDemotionRevokesExistingSessionPrivileges(t *testing.T) {
 		t.Fatalf("open store: %v", err)
 	}
 	t.Cleanup(func() { st.DB.Close() })
-	engine, err := plugin.Load(t.TempDir())
+	pluginsDir := t.TempDir()
+	engine, err := plugin.Load(pluginsDir)
 	if err != nil {
 		t.Fatalf("load plugins: %v", err)
 	}
@@ -97,7 +98,7 @@ func TestRoleDemotionRevokesExistingSessionPrivileges(t *testing.T) {
 	if err != nil {
 		t.Fatalf("load i18n: %v", err)
 	}
-	s := New(st, engine, catalog, fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<html></html>")}})
+	s := New(st, engine, pluginsDir, catalog, fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<html></html>")}})
 	token := loginAs(t, s, "organizer1", "pw", auth.RoleOrganizer)
 
 	// Sanity check: the token currently has organizer privileges.

@@ -56,7 +56,7 @@ func main() {
 		log.Fatalf("prepare embedded frontend: %v", err)
 	}
 
-	s := server.New(st, engine, catalog, frontendFS)
+	s := server.New(st, engine, pluginsDir, catalog, frontendFS)
 	addr := ":8080"
 	log.Printf("listening on %s", addr)
 	if err := http.ListenAndServe(addr, s); err != nil {
