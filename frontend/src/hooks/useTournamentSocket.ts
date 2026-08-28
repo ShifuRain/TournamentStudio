@@ -16,6 +16,8 @@ export function useTournamentSocket(tournamentId: string | undefined): { connect
   useEffect(() => {
     if (!tournamentId) return
 
+    failureCountRef.current = 0
+
     let socket: WebSocket | null = null
     let cancelled = false
 

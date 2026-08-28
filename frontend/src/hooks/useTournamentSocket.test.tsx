@@ -77,6 +77,36 @@ describe('useTournamentSocket', () => {
     expect(FakeWebSocket.instances.length).toBeGreaterThan(1)
   })
 
+  it('resets the failure count when tournamentId changes while the hook stays mounted', async () => {
+    const { result, rerender } = renderHook(
+      ({ tournamentId }: { tournamentId: string }) => useTournamentSocket(tournamentId),
+      { wrapper, initialProps: { tournamentId: '1' } },
+    )
+
+    // Drive 2 failed connection attempts on tournament '1' -- below the 3-failure threshold,
+    // so connectionLost stays false but the internal failure count sits at 2.
+    for (let i = 0; i < 2; i++) {
+      const current = FakeWebSocket.instances[FakeWebSocket.instances.length - 1]
+      current.onclose?.()
+      await vi.runOnlyPendingTimersAsync()
+    }
+    expect(result.current.connectionLost).toBe(false)
+
+    // Simulate a route param change that keeps the component mounted (e.g. navigating
+    // from one tournament's Watch page to another's).
+    rerender({ tournamentId: '2' })
+
+    const newSocket = FakeWebSocket.instances[FakeWebSocket.instances.length - 1]
+    expect(newSocket.url).toContain('/api/tournaments/2/ws')
+
+    // A single failure on the NEW connection must not immediately flip connectionLost --
+    // the failure count must have been reset to 0, not carried over from tournament '1'.
+    newSocket.onclose?.()
+    await vi.runOnlyPendingTimersAsync()
+
+    expect(result.current.connectionLost).toBe(false)
+  })
+
   it('closes the socket on unmount', () => {
     const { unmount } = renderHook(() => useTournamentSocket('42'), { wrapper })
     const socket = FakeWebSocket.instances[0]
