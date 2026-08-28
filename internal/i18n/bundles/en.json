@@ -80,5 +80,9 @@
   "schedule_round_actions_divisions_submit": "Cut Divisions",
   "schedule_round_actions_divisions_error": "Could not cut divisions. Please try again.",
   "schedule_round_history_title": "Round history",
-  "schedule_round_history_entry": "Round {{number}} — {{status}}"
+  "schedule_round_history_entry": "Round {{number}} — {{status}}",
+  "watch_connection_lost": "Live updates unavailable — showing last loaded data",
+  "watch_rank": "Rank",
+  "watch_team": "Team",
+  "watch_time_or_status": "Time / Status"
 }

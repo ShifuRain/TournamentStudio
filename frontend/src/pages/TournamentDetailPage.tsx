@@ -34,9 +34,9 @@ export function TournamentDetailPage() {
         <NavLink to="schedule" className={tabLinkClass}>
           {t('tab_schedule')}
         </NavLink>
-        <span className="cursor-not-allowed px-4 py-2 text-sm text-gray-300" title={t('tab_coming_soon')}>
+        <NavLink to="watch" className={tabLinkClass}>
           {t('tab_standings')}
-        </span>
+        </NavLink>
       </nav>
       <Outlet />
     </div>

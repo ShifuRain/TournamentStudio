@@ -100,3 +100,28 @@ export interface Heat {
   status: string
   results: HeatResult[]
 }
+
+export interface RankedTeam {
+  rank: number
+  team_id: string
+  time_seconds: number | null
+  status: string
+}
+
+export interface StandingsEntry {
+  group_id: number | null
+  division_id: number | null
+  division_name: string | null
+  ranked_teams: RankedTeam[]
+}
+
+export interface StandingsRound {
+  id: number
+  round_number: number
+  status: string
+  standings: StandingsEntry[]
+}
+
+export interface StandingsResponse {
+  rounds: StandingsRound[]
+}
