@@ -1,6 +1,9 @@
 package plugin
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestValidateAcceptsWellFormedSportPlugin(t *testing.T) {
 	source := []byte(`
@@ -46,6 +49,41 @@ func TestValidateRejectsUnrecognizedShape(t *testing.T) {
 	source := []byte(`return { id = "mystery" }`)
 	if err := Validate("mystery.lua", source); err == nil {
 		t.Fatal("expected an error for a plugin table with neither known field")
+	}
+}
+
+// TestValidateTimesOutOnInfiniteLoop exercises the top-level-chunk time
+// budget added to loadSource: an uploaded plugin whose body itself never
+// returns (as opposed to one whose next_round_groups/division_cuts
+// function never returns, covered by
+// TestNextRoundGroupsTimesOutOnInfiniteLoop in tournamenttype_test.go)
+// must not be able to hang the plugin-upload HTTP handler that calls
+// Validate forever.
+func TestValidateTimesOutOnInfiniteLoop(t *testing.T) {
+	// Shrink the production timeout for the duration of this test only, so
+	// it doesn't take pluginCallTimeout's full production value (5s) to
+	// observe the abort.
+	original := pluginCallTimeout
+	pluginCallTimeout = 200 * time.Millisecond
+	t.Cleanup(func() { pluginCallTimeout = original })
+
+	source := []byte(`
+while true do end
+return { id = "never-returns" }
+`)
+
+	done := make(chan error, 1)
+	go func() {
+		done <- Validate("infinite-loop.lua", source)
+	}()
+
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Fatal("expected an error for a plugin whose top-level body never returns, got nil")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatalf("Validate did not return within 2s of a %s timeout; the infinite loop was not aborted", pluginCallTimeout)
 	}
 }
 

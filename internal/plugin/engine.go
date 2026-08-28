@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"os"
@@ -119,6 +120,18 @@ func newSandboxedState() *lua.LState {
 
 func (e *Engine) loadSource(name string, source []byte, pluginSource string) error {
 	L := newSandboxedState()
+
+	// Bound the top-level chunk execution the same way every subsequent
+	// plugin call is bounded (see pluginCallTimeout in tournamenttype.go):
+	// without this, a malicious or buggy plugin body (e.g. `while true do
+	// end` at the top level, outside any function) runs before we ever get
+	// a chance to inspect its returned table, and gopher-lua enforces no
+	// bound of its own. This protects both Load's startup scan and
+	// Validate's isolated upload-time check.
+	ctx, cancel := context.WithTimeout(context.Background(), pluginCallTimeout)
+	defer cancel()
+	L.SetContext(ctx)
+	defer L.RemoveContext()
 
 	if err := L.DoString(string(source)); err != nil {
 		L.Close()
