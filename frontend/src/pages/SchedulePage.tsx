@@ -8,6 +8,7 @@ import { ScheduleRoundCreate } from './ScheduleRoundCreate'
 import { ScheduleAssignments } from './ScheduleAssignments'
 import { ScheduleHeats } from './ScheduleHeats'
 import { ScheduleRoundActions } from './ScheduleRoundActions'
+import { ui } from '../components/ui/styles'
 
 export function SchedulePage() {
   const { t } = useTranslation()
@@ -63,7 +64,7 @@ export function SchedulePage() {
       <ScheduleCourses />
       {rounds.length === 0 && <ScheduleRoundCreate />}
       {currentRound && (
-        <h2 className="mb-4 text-lg font-semibold">
+        <h2 className={`mb-4 ${ui.h2}`}>
           {t('schedule_round_history_entry', { number: currentRound.round_number, status: currentRound.status })}
         </h2>
       )}

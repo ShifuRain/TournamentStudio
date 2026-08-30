@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { ImportResult } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 export function TeamImportPage() {
   const { t } = useTranslation()
@@ -33,23 +35,25 @@ export function TeamImportPage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg p-8">
-      <h1 className="mb-6 text-xl font-bold">{t('import_title')}</h1>
+    <div className={ui.pageNarrow}>
+      <h1 className={`mb-6 ${ui.h1}`}>{t('import_title')}</h1>
 
       {!importMutation.data && (
-        <div className="space-y-4">
-          <input type="file" accept=".csv,.xlsx" aria-label={t('import_file_label')} onChange={handleFileChange} />
+        <div className={`space-y-4 ${ui.panel}`}>
+          <input
+            type="file"
+            accept=".csv,.xlsx"
+            aria-label={t('import_file_label')}
+            onChange={handleFileChange}
+            className="font-mono text-sm text-foam-dim file:mr-3 file:rounded file:border file:border-hairline file:bg-navy-2/40 file:px-3 file:py-1.5 file:text-foam"
+          />
           <div>
-            <button
-              onClick={handleSubmit}
-              disabled={!file || importMutation.isPending}
-              className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-            >
+            <Button onClick={handleSubmit} disabled={!file || importMutation.isPending} size="sm">
               {t('import_submit')}
-            </button>
+            </Button>
           </div>
           {importMutation.isError && (
-            <p role="alert" className="text-sm text-red-600">
+            <p role="alert" className={ui.error}>
               {t('import_error')}
             </p>
           )}
@@ -57,16 +61,16 @@ export function TeamImportPage() {
       )}
 
       {importMutation.data && (
-        <div>
-          <p className="mb-4">{t('import_result_summary', { count: importMutation.data.imported })}</p>
+        <div className={ui.panel}>
+          <p className={`mb-4 ${ui.muted}`}>{t('import_result_summary', { count: importMutation.data.imported })}</p>
           {importMutation.data.problems.length > 0 && (
-            <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-red-600">
+            <ul className="mb-4 list-disc space-y-1 pl-5 text-sm text-red-tint">
               {importMutation.data.problems.map((problem, i) => (
                 <li key={i}>{t('import_row_problem', { row: problem.row_index, message: problem.message })}</li>
               ))}
             </ul>
           )}
-          <Link to={`/tournaments/${id}/teams`} className="text-blue-600">
+          <Link to={`/tournaments/${id}/teams`} className={ui.link}>
             {t('import_back_link')}
           </Link>
         </div>

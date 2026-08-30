@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { Course } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 export function ScheduleCourses() {
   const { t } = useTranslation()
@@ -50,16 +52,16 @@ export function ScheduleCourses() {
   const canEdit = role === 'organizer'
 
   return (
-    <section className="mb-6 rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">{t('schedule_courses_title')}</h2>
-      <ul className="mb-4 divide-y">
+    <section className={`mb-6 ${ui.panel}`}>
+      <h2 className={`mb-3 ${ui.h2}`}>{t('schedule_courses_title')}</h2>
+      <ul className={`mb-4 ${ui.divider}`}>
         {courses.map((course) => (
           <li key={course.id} className="flex items-center justify-between py-2 text-sm">
             <span>
               {course.name} — {course.heat_interval_seconds}s interval
             </span>
             {canEdit && (
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 font-mono text-xs text-slate">
                 {t('schedule_courses_offset')}
                 <input
                   type="number"
@@ -67,7 +69,7 @@ export function ScheduleCourses() {
                   onBlur={(e) =>
                     updateMutation.mutate({ courseId: course.id, delayOffsetSeconds: Number(e.target.value) })
                   }
-                  className="w-20 rounded border px-2 py-1"
+                  className={`w-20 ${ui.input}`}
                   aria-label={`${t('schedule_courses_offset')} — ${course.name}`}
                 />
               </label>
@@ -76,26 +78,20 @@ export function ScheduleCourses() {
         ))}
       </ul>
       {updateMutation.isError && (
-        <p role="alert" className="mb-2 text-sm text-red-600">
+        <p role="alert" className={`mb-2 ${ui.error}`}>
           {t('schedule_courses_update_error')}
         </p>
       )}
       {canEdit && (
         <form onSubmit={handleSubmit} className="flex items-end gap-3">
           <div>
-            <label htmlFor="course-name" className="block text-sm font-medium">
+            <label htmlFor="course-name" className={ui.label}>
               {t('schedule_courses_name')}
             </label>
-            <input
-              id="course-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 rounded border px-3 py-2"
-              required
-            />
+            <input id="course-name" value={name} onChange={(e) => setName(e.target.value)} className={ui.input} required />
           </div>
           <div>
-            <label htmlFor="course-interval" className="block text-sm font-medium">
+            <label htmlFor="course-interval" className={ui.label}>
               {t('schedule_courses_interval')}
             </label>
             <input
@@ -104,21 +100,17 @@ export function ScheduleCourses() {
               min={1}
               value={intervalSeconds}
               onChange={(e) => setIntervalSeconds(Number(e.target.value))}
-              className="mt-1 w-32 rounded border px-3 py-2"
+              className={`w-32 ${ui.input}`}
               required
             />
           </div>
-          <button
-            type="submit"
-            disabled={createMutation.isPending}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
+          <Button type="submit" disabled={createMutation.isPending} size="sm">
             {t('schedule_courses_add_submit')}
-          </button>
+          </Button>
         </form>
       )}
       {createMutation.isError && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <p role="alert" className={`mt-2 ${ui.error}`}>
           {t('schedule_courses_add_error')}
         </p>
       )}

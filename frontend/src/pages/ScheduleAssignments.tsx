@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { Course } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 interface ScheduleAssignmentsProps {
   mode: 'group' | 'division'
@@ -51,23 +53,21 @@ export function ScheduleAssignments({ mode, roundId, items }: ScheduleAssignment
   const allCourseSelected = items.every((item) => selectedCourse[item.id] !== undefined)
 
   return (
-    <section className="mb-6 rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">
+    <section className={`mb-6 ${ui.panel}`}>
+      <h2 className={`mb-3 ${ui.h2}`}>
         {t(mode === 'group' ? 'schedule_assignments_group_title' : 'schedule_assignments_division_title')}
       </h2>
       <ul className="mb-4 space-y-2">
         {items.map((item) => (
           <li key={item.id} className="flex items-center justify-between text-sm">
             <span>{item.label}</span>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 font-mono text-xs text-slate">
               {t('schedule_assignments_course_label')}
               <select
                 aria-label={`${t('schedule_assignments_course_label')} — ${item.label}`}
                 value={selectedCourse[item.id] ?? ''}
-                onChange={(e) =>
-                  setSelectedCourse((prev) => ({ ...prev, [item.id]: Number(e.target.value) }))
-                }
-                className="rounded border px-2 py-1"
+                onChange={(e) => setSelectedCourse((prev) => ({ ...prev, [item.id]: Number(e.target.value) }))}
+                className={ui.select}
               >
                 <option value="" disabled>
                   {t('schedule_assignments_select_course')}
@@ -83,18 +83,18 @@ export function ScheduleAssignments({ mode, roundId, items }: ScheduleAssignment
         ))}
       </ul>
       {scheduleMutation.isError && (
-        <p role="alert" className="mb-2 text-sm text-red-600">
+        <p role="alert" className={`mb-2 ${ui.error}`}>
           {t('schedule_assignments_error')}
         </p>
       )}
-      <button
+      <Button
         type="button"
         onClick={() => scheduleMutation.mutate()}
         disabled={!allCourseSelected || scheduleMutation.isPending}
-        className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
+        size="sm"
       >
         {t('schedule_assignments_submit')}
-      </button>
+      </Button>
     </section>
   )
 }

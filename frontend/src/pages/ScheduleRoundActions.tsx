@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { Round } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 interface ScheduleRoundActionsProps {
   currentRound: Round
@@ -42,37 +44,30 @@ export function ScheduleRoundActions({ currentRound, allRounds }: ScheduleRoundA
   })
 
   if (role !== 'organizer' || currentRound.status !== 'closed') {
-    return (
-      <RoundHistory allRounds={allRounds} />
-    )
+    return <RoundHistory allRounds={allRounds} />
   }
 
   return (
     <>
-      <section className="mb-6 rounded border bg-white p-4">
+      <section className={`mb-6 ${ui.panel}`}>
         <div className="mb-4">
           {nextRoundMutation.isError && (
-            <p role="alert" className="mb-2 text-sm text-red-600">
+            <p role="alert" className={`mb-2 ${ui.error}`}>
               {t('schedule_round_actions_next_error')}
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => nextRoundMutation.mutate()}
-            disabled={nextRoundMutation.isPending}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
+          <Button type="button" onClick={() => nextRoundMutation.mutate()} disabled={nextRoundMutation.isPending}>
             {t('schedule_round_actions_next')}
-          </button>
+          </Button>
         </div>
 
         {currentRound.divisions.length === 0 && (
           <>
-            <h3 className="mb-2 text-sm font-semibold">{t('schedule_round_actions_divisions_title')}</h3>
+            <h3 className={`mb-2 ${ui.h3}`}>{t('schedule_round_actions_divisions_title')}</h3>
             {cuts.map((cut, index) => (
               <div key={index} className="mb-2 flex items-end gap-2">
                 <div>
-                  <label htmlFor={`cut-name-${index}`} className="block text-xs font-medium">
+                  <label htmlFor={`cut-name-${index}`} className={ui.label}>
                     {t('schedule_round_actions_divisions_name')}
                   </label>
                   <input
@@ -81,11 +76,11 @@ export function ScheduleRoundActions({ currentRound, allRounds }: ScheduleRoundA
                     onChange={(e) =>
                       setCuts((prev) => prev.map((c, i) => (i === index ? { ...c, name: e.target.value } : c)))
                     }
-                    className="rounded border px-2 py-1 text-sm"
+                    className={`text-sm ${ui.input}`}
                   />
                 </div>
                 <div>
-                  <label htmlFor={`cut-size-${index}`} className="block text-xs font-medium">
+                  <label htmlFor={`cut-size-${index}`} className={ui.label}>
                     {t('schedule_round_actions_divisions_size')}
                   </label>
                   <input
@@ -94,36 +89,35 @@ export function ScheduleRoundActions({ currentRound, allRounds }: ScheduleRoundA
                     min={1}
                     value={cut.size}
                     onChange={(e) =>
-                      setCuts((prev) =>
-                        prev.map((c, i) => (i === index ? { ...c, size: Number(e.target.value) } : c)),
-                      )
+                      setCuts((prev) => prev.map((c, i) => (i === index ? { ...c, size: Number(e.target.value) } : c)))
                     }
-                    className="w-20 rounded border px-2 py-1 text-sm"
+                    className={`w-20 text-sm ${ui.input}`}
                   />
                 </div>
               </div>
             ))}
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setCuts((prev) => [...prev, { name: '', size: 1 }])}
-              className="mb-3 rounded border px-3 py-1 text-xs"
+              className="mb-3"
             >
               {t('schedule_round_actions_divisions_add_cut')}
-            </button>
+            </Button>
             {divisionsMutation.isError && (
-              <p role="alert" className="mb-2 text-sm text-red-600">
+              <p role="alert" className={`mb-2 ${ui.error}`}>
                 {t('schedule_round_actions_divisions_error')}
               </p>
             )}
             <div>
-              <button
+              <Button
                 type="button"
                 onClick={() => divisionsMutation.mutate()}
                 disabled={divisionsMutation.isPending || !cuts.some((c) => c.name.trim() !== '')}
-                className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
               >
                 {t('schedule_round_actions_divisions_submit')}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -142,13 +136,11 @@ function RoundHistory({ allRounds }: { allRounds: Round[] }) {
   }
 
   return (
-    <section className="mb-6 rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">{t('schedule_round_history_title')}</h2>
-      <ul className="space-y-1 text-sm text-gray-600">
+    <section className={`mb-6 ${ui.panel}`}>
+      <h2 className={`mb-3 ${ui.h2}`}>{t('schedule_round_history_title')}</h2>
+      <ul className={`space-y-1 text-sm ${ui.faint}`}>
         {earlierRounds.map((round) => (
-          <li key={round.id}>
-            {t('schedule_round_history_entry', { number: round.round_number, status: round.status })}
-          </li>
+          <li key={round.id}>{t('schedule_round_history_entry', { number: round.round_number, status: round.status })}</li>
         ))}
       </ul>
     </section>

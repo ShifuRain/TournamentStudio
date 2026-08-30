@@ -5,6 +5,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { Course, Heat, Round, Team } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
+import { StatusChip } from '../components/ui/StatusChip'
 
 interface ScheduleHeatsProps {
   heats: Heat[]
@@ -76,11 +79,13 @@ function HeatRow({
   const isOpen = heat.status !== 'closed'
 
   return (
-    <li className="rounded border p-3">
-      <div className="mb-2 flex items-center justify-between text-sm">
+    <li className="rounded-md border border-hairline p-3">
+      <div className="mb-2 flex items-center justify-between font-mono text-xs text-foam-dim">
         <span>
           {courseName} — {new Date(heat.effective_start).toLocaleString()} —{' '}
-          {t(heat.status === 'closed' ? 'schedule_heats_status_closed' : 'schedule_heats_status_scheduled')}
+          <StatusChip tone={heat.status === 'closed' ? 'good' : 'accent'}>
+            {t(heat.status === 'closed' ? 'schedule_heats_status_closed' : 'schedule_heats_status_scheduled')}
+          </StatusChip>
         </span>
         {role === 'organizer' && (
           <div className="flex items-center gap-2">
@@ -89,20 +94,16 @@ function HeatRow({
               id={`start-${heat.id}`}
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="rounded border px-2 py-1 text-xs"
+              className={`text-xs ${ui.input}`}
             />
-            <button
-              type="button"
-              onClick={() => startMutation.mutate()}
-              className="rounded border px-2 py-1 text-xs"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={() => startMutation.mutate()}>
               {t('schedule_heats_start_override_submit')}
-            </button>
+            </Button>
           </div>
         )}
       </div>
       {startMutation.isError && (
-        <p role="alert" className="mb-2 text-xs text-red-600">
+        <p role="alert" className={`mb-2 text-xs ${ui.error}`}>
           {t('schedule_heats_start_override_error')}
         </p>
       )}
@@ -128,7 +129,7 @@ function HeatRow({
                           [teamId]: { timeSeconds: e.target.value, status: '' },
                         }))
                       }
-                      className="w-24 rounded border px-2 py-1"
+                      className={`w-28 text-center font-mono text-base tabular-nums ${ui.input}`}
                     />
                   </td>
                   <td>
@@ -144,7 +145,7 @@ function HeatRow({
                           [teamId]: { timeSeconds: '', status: e.target.value },
                         }))
                       }
-                      className="rounded border px-2 py-1"
+                      className={ui.select}
                     >
                       <option value="">{t('schedule_heats_results_status_finished')}</option>
                       <option value="DNF">DNF</option>
@@ -157,18 +158,13 @@ function HeatRow({
             </tbody>
           </table>
           {resultsMutation.isError && (
-            <p role="alert" className="mt-2 text-xs text-red-600">
+            <p role="alert" className={`mt-2 text-xs ${ui.error}`}>
               {t('schedule_heats_results_error')}
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => resultsMutation.mutate()}
-            disabled={resultsMutation.isPending}
-            className="mt-2 rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
+          <Button type="button" onClick={() => resultsMutation.mutate()} disabled={resultsMutation.isPending} className="mt-2">
             {t('schedule_heats_results_submit')}
-          </button>
+          </Button>
         </>
       )}
     </li>
@@ -187,8 +183,8 @@ export function ScheduleHeats({ heats, courses, currentRound, teams }: ScheduleH
   }
 
   return (
-    <section className="mb-6 rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">{t('schedule_heats_title')}</h2>
+    <section className={`mb-6 ${ui.panel}`}>
+      <h2 className={`mb-3 ${ui.h2}`}>{t('schedule_heats_title')}</h2>
       <ul className="space-y-3">
         {heats.map((heat) => (
           <HeatRow

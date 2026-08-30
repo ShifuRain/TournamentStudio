@@ -4,6 +4,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { PluginsResponse } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
+import { StatusChip } from '../components/ui/StatusChip'
 
 export function PluginsPage() {
   const { t } = useTranslation()
@@ -43,22 +46,22 @@ export function PluginsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      <h1 className="mb-6 text-xl font-bold">{t('plugins_title')}</h1>
+    <div className={ui.page}>
+      <h1 className={`mb-6 ${ui.h1}`}>{t('plugins_title')}</h1>
 
       <section className="mb-8">
-        <h2 className="mb-2 text-lg font-semibold">{t('plugins_sports_title')}</h2>
+        <h2 className={`mb-2 ${ui.h2}`}>{t('plugins_sports_title')}</h2>
         <ul className="space-y-2">
           {sports.map((sp) => (
-            <li key={sp.id} className="flex items-center justify-between rounded border p-3">
+            <li key={sp.id} className={`flex items-center justify-between ${ui.panel}`}>
               <span className="font-medium">{sp.display_name}</span>
               {sp.source === 'bundled' ? (
-                <span className="text-xs text-gray-400">{t('plugins_builtin_badge')}</span>
+                <StatusChip>{t('plugins_builtin_badge')}</StatusChip>
               ) : (
                 isOrganizer && (
-                  <button onClick={() => deleteMutation.mutate(sp.source)} className="text-xs text-red-600">
+                  <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(sp.source)}>
                     {t('plugins_delete')}
-                  </button>
+                  </Button>
                 )
               )}
             </li>
@@ -67,18 +70,18 @@ export function PluginsPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-2 text-lg font-semibold">{t('plugins_tournament_types_title')}</h2>
+        <h2 className={`mb-2 ${ui.h2}`}>{t('plugins_tournament_types_title')}</h2>
         <ul className="space-y-2">
           {tournamentTypes.map((ttp) => (
-            <li key={ttp.id} className="flex items-center justify-between rounded border p-3">
+            <li key={ttp.id} className={`flex items-center justify-between ${ui.panel}`}>
               <span className="font-medium">{ttp.id}</span>
               {ttp.source === 'bundled' ? (
-                <span className="text-xs text-gray-400">{t('plugins_builtin_badge')}</span>
+                <StatusChip>{t('plugins_builtin_badge')}</StatusChip>
               ) : (
                 isOrganizer && (
-                  <button onClick={() => deleteMutation.mutate(ttp.source)} className="text-xs text-red-600">
+                  <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(ttp.source)}>
                     {t('plugins_delete')}
-                  </button>
+                  </Button>
                 )
               )}
             </li>
@@ -87,21 +90,23 @@ export function PluginsPage() {
       </section>
 
       {isOrganizer && (
-        <section>
-          <h2 className="mb-2 text-lg font-semibold">{t('plugins_upload_title')}</h2>
+        <section className={ui.panel}>
+          <h2 className={`mb-2 ${ui.h2}`}>{t('plugins_upload_title')}</h2>
           <div className="space-y-2">
-            <input type="file" accept=".lua" aria-label={t('plugins_upload_file_label')} onChange={handleFileChange} />
+            <input
+              type="file"
+              accept=".lua"
+              aria-label={t('plugins_upload_file_label')}
+              onChange={handleFileChange}
+              className="font-mono text-sm text-foam-dim file:mr-3 file:rounded file:border file:border-hairline file:bg-navy-2/40 file:px-3 file:py-1.5 file:text-foam"
+            />
             <div>
-              <button
-                onClick={() => file && uploadMutation.mutate()}
-                disabled={!file || uploadMutation.isPending}
-                className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-              >
+              <Button onClick={() => file && uploadMutation.mutate()} disabled={!file || uploadMutation.isPending} size="sm">
                 {t('plugins_upload_submit')}
-              </button>
+              </Button>
             </div>
             {uploadMutation.isError && (
-              <p role="alert" className="text-sm text-red-600">
+              <p role="alert" className={ui.error}>
                 {(uploadMutation.error as Error).message}
               </p>
             )}

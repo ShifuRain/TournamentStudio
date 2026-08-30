@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { PluginsResponse, Tournament } from '../api/types'
 import { useAvailableLanguages } from '../i18n/i18n'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 export function TournamentCreatePage() {
   const { t } = useTranslation()
@@ -46,30 +48,24 @@ export function TournamentCreatePage() {
   }
 
   return (
-    <div className="mx-auto max-w-lg p-8">
-      <h1 className="mb-6 text-xl font-bold">{t('tournament_create_title')}</h1>
+    <div className={ui.pageNarrow}>
+      <h1 className={`mb-6 ${ui.h1}`}>{t('tournament_create_title')}</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium">
+          <label htmlFor="name" className={ui.label}>
             {t('tournament_name')}
           </label>
-          <input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
-            required
-          />
+          <input id="name" value={name} onChange={(e) => setName(e.target.value)} className={ui.input} required />
         </div>
         <div>
-          <label htmlFor="language" className="block text-sm font-medium">
+          <label htmlFor="language" className={ui.label}>
             {t('tournament_language')}
           </label>
           <select
             id="language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
+            className={`w-full ${ui.select}`}
           >
             {availableLanguages.map((lang) => (
               <option key={lang} value={lang}>
@@ -79,7 +75,7 @@ export function TournamentCreatePage() {
           </select>
         </div>
         <div>
-          <label htmlFor="sport" className="block text-sm font-medium">
+          <label htmlFor="sport" className={ui.label}>
             {t('tournament_sport')}
           </label>
           <select
@@ -89,7 +85,7 @@ export function TournamentCreatePage() {
               setSportId(e.target.value)
               setTypeId('')
             }}
-            className="mt-1 w-full rounded border px-3 py-2"
+            className={`w-full ${ui.select}`}
             required
           >
             <option value="" disabled>
@@ -103,14 +99,14 @@ export function TournamentCreatePage() {
           </select>
         </div>
         <div>
-          <label htmlFor="type" className="block text-sm font-medium">
+          <label htmlFor="type" className={ui.label}>
             {t('tournament_type')}
           </label>
           <select
             id="type"
             value={typeId}
             onChange={(e) => setTypeId(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
+            className={`w-full ${ui.select}`}
             required
             disabled={!sportId}
           >
@@ -125,17 +121,13 @@ export function TournamentCreatePage() {
           </select>
         </div>
         {createMutation.isError && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className={ui.error}>
             {t('tournament_create_error')}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={createMutation.isPending}
-          className="w-full rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-        >
+        <Button type="submit" disabled={createMutation.isPending} className="w-full">
           {t('tournament_create_submit')}
-        </button>
+        </Button>
       </form>
     </div>
   )

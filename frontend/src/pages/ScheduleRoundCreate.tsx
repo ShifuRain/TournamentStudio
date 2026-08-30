@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import type { Round, Team } from '../api/types'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 function shuffledGroups(teamIds: string[], groupCount: number): string[][] {
   const shuffled = [...teamIds]
@@ -64,11 +66,11 @@ export function ScheduleRoundCreate() {
   }
 
   return (
-    <section className="mb-6 rounded border bg-white p-4">
-      <h2 className="mb-3 text-lg font-semibold">{t('schedule_round_create_title')}</h2>
+    <section className={`mb-6 ${ui.panel}`}>
+      <h2 className={`mb-3 ${ui.h2}`}>{t('schedule_round_create_title')}</h2>
       <div className="mb-3 flex items-end gap-3">
         <div>
-          <label htmlFor="group-count" className="block text-sm font-medium">
+          <label htmlFor="group-count" className={ui.label}>
             {t('schedule_round_create_group_count')}
           </label>
           <input
@@ -77,27 +79,20 @@ export function ScheduleRoundCreate() {
             min={1}
             value={groupCount}
             onChange={(e) => setGroupCount(Number(e.target.value))}
-            className="mt-1 w-24 rounded border px-3 py-2"
+            className={`w-24 ${ui.input}`}
           />
         </div>
-        <button
-          type="button"
-          onClick={handleShuffle}
-          className="rounded border px-4 py-2 text-sm"
-          disabled={teams.length === 0}
-        >
+        <Button type="button" variant="outline" onClick={handleShuffle} disabled={teams.length === 0}>
           {t('schedule_round_create_shuffle')}
-        </button>
+        </Button>
       </div>
 
       {groups && (
         <>
           <div className="mb-4 grid grid-cols-2 gap-4">
             {groups.map((group, groupIndex) => (
-              <div key={groupIndex} className="rounded border p-3">
-                <h3 className="mb-2 text-sm font-medium">
-                  {t('schedule_round_create_group_label', { number: groupIndex + 1 })}
-                </h3>
+              <div key={groupIndex} className="rounded-md border border-hairline p-3">
+                <h3 className={`mb-2 ${ui.h3}`}>{t('schedule_round_create_group_label', { number: groupIndex + 1 })}</h3>
                 <ul className="space-y-1">
                   {group.map((teamId) => (
                     <li key={teamId} className="flex items-center justify-between text-sm">
@@ -106,7 +101,7 @@ export function ScheduleRoundCreate() {
                         aria-label={`${t('schedule_round_create_move_to')} — ${teamName(teamId)}`}
                         value={groupIndex}
                         onChange={(e) => moveTeam(teamId, Number(e.target.value))}
-                        className="rounded border px-2 py-1 text-xs"
+                        className={`text-xs ${ui.select}`}
                       >
                         {groups.map((_, targetIndex) => (
                           <option key={targetIndex} value={targetIndex}>
@@ -121,18 +116,13 @@ export function ScheduleRoundCreate() {
             ))}
           </div>
           {createMutation.isError && (
-            <p role="alert" className="mb-2 text-sm text-red-600">
+            <p role="alert" className={`mb-2 ${ui.error}`}>
               {t('schedule_round_create_error')}
             </p>
           )}
-          <button
-            type="button"
-            onClick={() => createMutation.mutate()}
-            disabled={createMutation.isPending}
-            className="rounded bg-blue-600 px-4 py-2 text-sm text-white disabled:opacity-50"
-          >
+          <Button type="button" onClick={() => createMutation.mutate()} disabled={createMutation.isPending}>
             {t('schedule_round_create_submit')}
-          </button>
+          </Button>
         </>
       )}
     </section>

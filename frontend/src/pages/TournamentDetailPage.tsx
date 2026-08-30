@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { Tournament } from '../api/types'
+import { ui } from '../components/ui/styles'
 
 export function TournamentDetailPage() {
   const { t } = useTranslation()
@@ -14,20 +15,20 @@ export function TournamentDetailPage() {
   })
 
   const tabLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `border-b-2 px-4 py-2 text-sm ${
-      isActive ? 'border-blue-600 font-medium text-blue-600' : 'border-transparent text-gray-500'
+    `border-b-2 px-4 py-2 font-mono text-xs uppercase tracking-wide ${
+      isActive ? 'border-yellow text-foam' : 'border-transparent text-slate hover:text-foam-dim'
     }`
 
   return (
-    <div className="mx-auto max-w-3xl p-8">
-      {isLoading && <p>{t('loading')}</p>}
+    <div className={ui.page}>
+      {isLoading && <p className={ui.muted}>{t('loading')}</p>}
       {tournament && (
         <>
-          <h1 className="mb-1 text-xl font-bold">{tournament.name}</h1>
-          <p className="mb-6 text-sm text-gray-500">{tournament.status}</p>
+          <h1 className={`mb-1 ${ui.h1}`}>{tournament.name}</h1>
+          <p className={`mb-6 font-mono text-xs uppercase tracking-wide ${ui.faint}`}>{tournament.status}</p>
         </>
       )}
-      <nav className="mb-6 flex border-b">
+      <nav className="mb-6 flex border-b border-hairline">
         <NavLink to="teams" className={tabLinkClass}>
           {t('tab_teams')}
         </NavLink>

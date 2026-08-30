@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth/AuthContext'
 import { ApiError } from '../api/client'
+import { ui } from '../components/ui/styles'
+import { Button } from '../components/ui/Button'
 
 export function LoginPage() {
   const { t } = useTranslation()
@@ -32,28 +34,28 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 rounded-lg bg-white p-8 shadow">
-        <h1 className="text-xl font-bold">{t('login_title')}</h1>
+    <div className="flex min-h-screen items-center justify-center bg-navy bg-[radial-gradient(120%_90%_at_50%_-10%,var(--color-navy-2)_0%,var(--color-navy)_55%)] px-4">
+      <form onSubmit={handleSubmit} className={`w-full max-w-sm space-y-4 ${ui.panel}`}>
+        <h1 className={ui.h1}>{t('login_title')}</h1>
         {error && (
-          <p role="alert" className="text-sm text-red-600">
+          <p role="alert" className={ui.error}>
             {error}
           </p>
         )}
         <div>
-          <label htmlFor="username" className="block text-sm font-medium">
+          <label htmlFor="username" className={ui.label}>
             {t('login_username')}
           </label>
           <input
             id="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
+            className={ui.input}
             required
           />
         </div>
         <div>
-          <label htmlFor="password" className="block text-sm font-medium">
+          <label htmlFor="password" className={ui.label}>
             {t('login_password')}
           </label>
           <input
@@ -61,17 +63,13 @@ export function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded border px-3 py-2"
+            className={ui.input}
             required
           />
         </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-        >
+        <Button type="submit" disabled={submitting} className="w-full">
           {t('login_submit')}
-        </button>
+        </Button>
       </form>
     </div>
   )
